@@ -1,0 +1,20 @@
+/* App-wide additions on top of tokens.css and lumora-components.css. */
+:root {
+  /* next/font gives Newsreader a generated family name; point the token at it. */
+  --font-display: var(--font-newsreader), Newsreader, Georgia, "Times New Roman", serif;
+  color-scheme: light;
+}
+:root[data-theme="dark"] { color-scheme: dark; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+}
+
+html, body { background: var(--surface-sunken); }
+* { box-sizing: border-box; }
+a { color: var(--brand); }
+select.lu-input { padding-right: 8px; }
+input[type="date"].lu-input, input[type="time"].lu-input { padding: 0 8px; }
+textarea.lu-input { height: auto; padding: 8px 12px; }
+.lu-input[aria-invalid="true"] { border-color: var(--danger); }
+.lu-btn { text-decoration: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

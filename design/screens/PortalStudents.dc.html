@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Module students</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/lumora/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="{{root}}">
+<dc-import name="Sidebar" active="students" dark="{{dark}}" minh="1100px" hint-size="248px,1100px"></dc-import>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<dc-import name="Topbar" crumb="Modules / In22-S7-CS4473" dark="{{dark}}" toggle="{{toggle}}" hint-size="100%,44px"></dc-import>
+<main style="width: 100%; max-width: 1180px; box-sizing: border-box; padding: 24px 32px 40px; display: flex; flex-direction: column; gap: 16px">
+
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+    <div>
+      <span style="font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted)">In22-S7-CS4473</span>
+      <h1 style="margin: 2px 0 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Mobile Computing</h1>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <a class="lu-btn" href="ProjectorRegister.dc.html" style="text-decoration: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path></svg>Show registration QR</a>
+      <a class="lu-btn" href="PortalCsvImport.dc.html" style="text-decoration: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path></svg>Import CSV</a>
+      <a class="lu-btn" href="#add-student" style="text-decoration: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add student</a>
+    </div>
+  </div>
+
+  <nav aria-label="Module sections" style="display: flex; gap: 2px; border-bottom: 1px solid var(--line); padding-bottom: 8px">
+    <a class="lu-group is-active" href="PortalStudents.dc.html" aria-current="page" style="text-decoration: none">Students</a>
+    <a class="lu-group" href="ProjectorRegister.dc.html" style="text-decoration: none">Registration</a>
+    <a class="lu-group" href="PortalSessions.dc.html" style="text-decoration: none">Sessions</a>
+    <a class="lu-group" href="PortalAttendance.dc.html" style="text-decoration: none">Attendance</a>
+  </nav>
+
+  <section aria-label="Summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg)">
+    <div style="padding: 14px 16px; border-right: 1px solid var(--line)"><div style="font-size: 12px; font-weight: 500; color: var(--ink-muted)">Added by you</div><div style="font-size: 20px; line-height: 28px; font-weight: 600">60</div><div style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">58 from CSV · 2 by hand</div></div>
+    <div style="padding: 14px 16px; border-right: 1px solid var(--line)"><div style="font-size: 12px; font-weight: 500; color: var(--ink-muted)">Registered</div><div style="font-size: 20px; line-height: 28px; font-weight: 600">42</div><span class="lu-badge lu-badge--success">70% of the class</span></div>
+    <div style="padding: 14px 16px; border-right: 1px solid var(--line)"><div style="font-size: 12px; font-weight: 500; color: var(--ink-muted)">Not registered yet</div><div style="font-size: 20px; line-height: 28px; font-weight: 600">18</div><span class="lu-badge lu-badge--warning">Show QR next class</span></div>
+    <div style="padding: 14px 16px"><div style="font-size: 12px; font-weight: 500; color: var(--ink-muted)">Failed registrations today</div><div style="font-size: 20px; line-height: 28px; font-weight: 600">3</div><span class="lu-badge lu-badge--danger">See the list</span></div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+    <section style="flex: 999 1 600px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden">
+      <div style="padding: 10px 12px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--line)">
+        <div role="group" aria-label="Filter students" style="display: inline-flex; gap: 2px">
+          <button type="button" class="lu-toggle is-on" aria-pressed="true" style="padding: 0 10px">All 60</button>
+          <button type="button" class="lu-toggle" aria-pressed="false" style="padding: 0 10px">Registered 42</button>
+          <button type="button" class="lu-toggle" aria-pressed="false" style="padding: 0 10px">Not registered 18</button>
+          <button type="button" class="lu-toggle" aria-pressed="false" style="padding: 0 10px">Below 80% 3</button>
+        </div>
+        <input class="lu-input" type="search" aria-label="Search students" placeholder="Search index or name" style="width: 200px">
+      </div>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; min-width: 760px">
+          <thead><tr style="background: var(--surface-sunken)">
+            <th style="text-align: left; padding: 8px 16px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Index no.</th>
+            <th style="text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Name on your list</th>
+            <th style="text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Status</th>
+            <th style="text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Phone</th>
+            <th style="text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Attendance</th>
+            <th style="padding: 8px 16px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Actions</span></th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+              <tr style="border-top: 1px solid var(--line)">
+                <td style="padding: 9px 16px; font-family: var(--font-mono); font-size: 12px">{{r.index}}</td>
+                <td style="padding: 9px 12px; font-weight: 600">{{r.name}}</td>
+                <td style="padding: 9px 12px">
+                  <sc-if value="{{r.reg}}" hint-placeholder-val="{{true}}"><span style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start"><span class="lu-badge lu-badge--success"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Registered</span><span style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">{{r.at}}</span></span></sc-if>
+                  <sc-if value="{{r.notReg}}" hint-placeholder-val="{{false}}"><span class="lu-badge"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><circle cx="12" cy="12" r="9"></circle><path d="M8 12h8"></path></svg>Not registered</span></sc-if>
+                </td>
+                <td style="padding: 9px 12px; color: var(--ink-muted)">{{r.phone}}</td>
+                <td style="padding: 9px 12px">
+                  <sc-if value="{{r.ok}}" hint-placeholder-val="{{true}}"><span style="font-weight: 600">{{r.att}}</span></sc-if>
+                  <sc-if value="{{r.low}}" hint-placeholder-val="{{false}}"><span class="lu-badge lu-badge--warning"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 4.3L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"></path></svg>{{r.att}} · below 80%</span></sc-if>
+                  <sc-if value="{{r.none}}" hint-placeholder-val="{{false}}"><span style="color: var(--ink-muted)">No sessions yet</span></sc-if>
+                </td>
+                <td style="padding: 9px 16px; text-align: right; white-space: nowrap">
+                  <sc-if value="{{r.reg}}" hint-placeholder-val="{{true}}"><button type="button" class="lu-btn lu-btn--sm lu-btn--ghost">Reset device</button></sc-if>
+                  <button type="button" class="lu-iconbtn lu-iconbtn--sm" aria-label="More actions for {{r.index}}" style="vertical-align: middle"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></button>
+                </td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      <div style="padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); color: var(--ink-muted)"><span>Showing 1–10 of 60</span><span style="display: flex; gap: 8px"><button type="button" class="lu-btn lu-btn--sm">Previous</button><button type="button" class="lu-btn lu-btn--sm">Next</button></span></div>
+    </section>
+
+    <div style="flex: 1 1 288px; display: flex; flex-direction: column; gap: 16px">
+      <form id="add-student" aria-labelledby="as-title" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="as-title" style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">Add a student</h2>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Index number<input class="lu-input" placeholder="220366X"></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Name<input class="lu-input" placeholder="Lokuhewa P. C."></label>
+        <p style="margin: 0; color: var(--ink-muted)">The student registers with this name and index number. Capitals, spaces and dots don't matter.</p>
+        <button type="button" class="lu-btn lu-btn--primary" style="justify-content: center">Add student</button>
+      </form>
+
+      <section style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">Registration</h2><label class="lu-check"><input type="checkbox" checked="checked">Open</label></div>
+        <p style="margin: 0; color: var(--ink-muted)">Students on your list can register by scanning the QR in class.</p>
+        <div style="font-size: 12px; font-weight: 500; color: var(--ink-muted); margin-top: 4px">Failed attempts today</div>
+        <div class="lu-notice lu-notice--danger" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg><span><b style="font-family: var(--font-mono); font-size: 12px; font-weight: 600">220871C</b> isn't on this module's list. 10:21</span></div>
+        <div class="lu-notice lu-notice--danger" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg><span><b style="font-family: var(--font-mono); font-size: 12px; font-weight: 600">220610F</b> used a phone that belongs to another student. 10:12</span></div>
+        <div class="lu-notice lu-notice--warning" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 4.3L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"></path></svg><span><b style="font-family: var(--font-mono); font-size: 12px; font-weight: 600">220245K</b> typed a different name, then registered at 10:09.</span></div>
+      </section>
+    </div>
+  </div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  lu(dark) {
+    var T = {'canvas':['#e8eae6','#0d1112'],'surface':['#ffffff','#161b1c'],'surface-sunken':['#f4f5f2','#121718'],'surface-raised':['#ffffff','#1e2526'],'line':['#e0e3de','#2a3233'],'line-strong':['#868e89','#66726f'],'ink':['#141b1c','#e7eceb'],'ink-muted':['#545f61','#9eaaab'],'brand':['#0d6767','#5cc4bd'],'brand-hover':['#0a5656','#7dd3cd'],'brand-soft':['#dcefec','#13302e'],'on-brand':['#ffffff','#071615'],'selected':['#e3f1ef','#163331'],'focus':['#0d6767','#6fd0c9'],'lumen':['#e8a13a','#f0b45a'],'lumen-soft':['#fbeed6','#3a2a10'],'lumen-ink':['#7a4807','#f0b45a'],'on-lumen':['#2a1b05','#2a1b05'],'success':['#1d7346','#5fca8e'],'success-soft':['#ddf1e4','#11291b'],'warning':['#8f5400','#f0b54a'],'warning-soft':['#fcefd6','#33240a'],'danger':['#b42318','#f8806f'],'danger-soft':['#fde4e1','#3a1512']};
+    var F = {'paper':'#ffffff','font-ui':'"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif','font-display':'Newsreader, Georgia, "Times New Roman", serif','font-mono':'"Cascadia Mono", ui-monospace, "SF Mono", Consolas, monospace','space-1':'4px','space-2':'8px','space-3':'12px','space-4':'16px','space-5':'20px','space-6':'24px','radius-sm':'4px','radius-md':'6px','radius-lg':'10px','radius-pill':'999px','control-h':'32px','control-h-sm':'28px','icon-sm':'16px','icon-md':'18px'};
+    var o = {};
+    for (var k in T) o['--' + k] = T[k][dark ? 1 : 0];
+    for (var j in F) o['--' + j] = F[j];
+    return o;
+  }
+  renderVals() {
+    var s = this.state || {};
+    var dark = s.dark != null ? s.dark : !!this.props.dark;
+    var data = [
+      ['220366X','Lokuhewa P. C.','27 Oct, 10:05','Galaxy A14 · Android 14',100],
+      ['220720E','Wijesinghe L. A. V. B.','27 Oct, 10:06','Pixel 7 · Android 15',100],
+      ['220101A','Perera K. D.','27 Oct, 10:07','Redmi Note 12 · Android 13',88],
+      ['220245K','Fernando S. M.','27 Oct, 10:09','Galaxy S21 · Android 14',75],
+      ['220512P','Jayasinghe R. T.',null,'–',null],
+      ['220633N','Senanayake H. M.','27 Oct, 10:11','Nokia G21 · Android 12',63],
+      ['220188D','Wickramasinghe D. S.',null,'–',null],
+      ['220402H','Bandara M. P.','27 Oct, 10:14','Vivo Y21 · Android 11',100],
+      ['220557L','Rathnayake A. K.',null,'–',null],
+      ['220719B','Herath S. D.','3 Nov, 10:02','Oppo A57 · Android 13',null]
+    ];
+    var rows = data.map(function (d) {
+      var reg = !!d[2]; var has = d[4] != null;
+      return { index: d[0], name: d[1], at: reg ? 'on ' + d[2] : '', phone: d[3], reg: reg, notReg: !reg, att: has ? d[4] + '%' : '', ok: has && d[4] >= 80, low: has && d[4] < 80, none: !has };
+    });
+    var self = this;
+    return { root: Object.assign(this.lu(dark), { minHeight: '100vh', display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', background: 'var(--surface-sunken)', color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: '20px' }), dark: dark, rows: rows, toggle: function () { self.setState({ dark: !dark }); } };
+  }
+}
+</script>
+</body>
+</html>

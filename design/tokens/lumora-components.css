@@ -1,0 +1,123 @@
+/* Lumora components — plain CSS classes, prefixed lu-. Reads the tokens from tokens.css. */
+body { margin: 0; font-family: var(--font-ui); font-size: 13px; line-height: 20px; background: var(--surface); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.lu-stage { padding: var(--space-4); display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.lu-stage--col { flex-direction: column; align-items: flex-start; }
+.lu-stage--canvas { background: var(--canvas); }
+.lu-note { font-size: 11px; line-height: 16px; color: var(--ink-muted); }
+.lu-icon { width: var(--icon-sm); height: var(--icon-sm); flex: none; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.lu-icon--md { width: var(--icon-md); height: var(--icon-md); }
+
+/* Button */
+.lu-btn { font: inherit; font-size: 13px; font-weight: 500; height: var(--control-h); padding: 0 var(--space-3); display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-md); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.lu-btn:hover { background: var(--surface-sunken); }
+.lu-btn--primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.lu-btn--primary:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+.lu-btn--ghost { background: transparent; border-color: transparent; }
+.lu-btn--ghost:hover { background: var(--surface-sunken); }
+.lu-btn--danger { background: var(--surface); border-color: var(--danger); color: var(--danger); }
+.lu-btn--danger:hover { background: var(--danger-soft); }
+.lu-btn--sm { height: var(--control-h-sm); padding: 0 10px; font-size: 12px; }
+.lu-btn:disabled { opacity: .45; cursor: default; }
+.lu-btn:disabled:hover { background: var(--surface); }
+.lu-btn--primary:disabled:hover { background: var(--brand); }
+.lu-btn:focus-visible, .lu-iconbtn:focus-visible, .lu-group:focus-visible, .lu-tab:focus-visible, .lu-swatch:focus-visible, .lu-input:focus-visible, .lu-thumb:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.lu-btn.is-focus { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Keyboard key */
+.lu-kbd { font-family: var(--font-mono); font-size: 11px; line-height: 16px; padding: 0 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: var(--radius-sm); color: var(--ink-muted); background: var(--surface); }
+
+/* Icon button */
+.lu-iconbtn { width: var(--control-h); height: var(--control-h); display: inline-grid; place-items: center; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--ink-muted); cursor: pointer; position: relative; padding: 0; }
+.lu-iconbtn:hover { background: var(--surface-sunken); color: var(--ink); }
+.lu-iconbtn.is-active { background: var(--selected); color: var(--brand); }
+.lu-iconbtn--sm { width: var(--control-h-sm); height: var(--control-h-sm); }
+.lu-iconbtn .lu-colorbar { position: absolute; left: 9px; right: 9px; bottom: 4px; height: 3px; border-radius: 2px; }
+.lu-iconbtn:disabled { opacity: .45; cursor: default; }
+
+/* Badge */
+.lu-badge { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px; border-radius: var(--radius-sm); font-size: 11px; line-height: 16px; font-weight: 600; background: var(--surface-sunken); color: var(--ink-muted); border: 1px solid var(--line); white-space: nowrap; }
+.lu-badge--new { background: var(--lumen); border-color: var(--lumen); color: var(--on-lumen); }
+.lu-badge--brand { background: var(--brand-soft); border-color: transparent; color: var(--brand); }
+.lu-badge--success { background: var(--success-soft); border-color: transparent; color: var(--success); }
+.lu-badge--warning { background: var(--warning-soft); border-color: transparent; color: var(--warning); }
+.lu-badge--danger { background: var(--danger-soft); border-color: transparent; color: var(--danger); }
+
+/* Title bar + document tabs */
+.lu-titlebar { height: var(--titlebar-h); background: var(--surface-sunken); display: flex; align-items: flex-end; gap: 2px; padding: 0 var(--space-2); border-bottom: 1px solid var(--line); box-sizing: border-box; }
+.lu-tab { height: 32px; max-width: 220px; display: inline-flex; align-items: center; gap: var(--space-2); padding: 0 6px 0 var(--space-3); border-radius: var(--radius-md) var(--radius-md) 0 0; font-size: 12px; font-weight: 500; color: var(--ink-muted); cursor: default; position: relative; top: 1px; border: 1px solid transparent; border-bottom: 0; box-sizing: border-box; }
+.lu-tab:hover { color: var(--ink); background: var(--surface); }
+.lu-tab.is-active { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.lu-tab__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lu-tab__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); flex: none; }
+.lu-tab .lu-iconbtn { width: 20px; height: 20px; border-radius: var(--radius-sm); }
+.lu-tab .lu-iconbtn .lu-icon { width: 14px; height: 14px; }
+
+/* Toolbar */
+.lu-toolbar { height: var(--toolbar-h); display: flex; align-items: center; gap: var(--space-1); padding: 0 var(--space-2); background: var(--surface); border-bottom: 1px solid var(--line); box-sizing: border-box; }
+.lu-subtoolbar { height: var(--subtoolbar-h); display: flex; align-items: center; gap: 2px; padding: 0 var(--space-2); background: var(--surface); border-bottom: 1px solid var(--line); box-sizing: border-box; }
+.lu-groups { display: flex; gap: 2px; margin: 0 auto; }
+.lu-group { font: inherit; font-size: 13px; font-weight: 500; height: var(--control-h); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-md); background: transparent; color: var(--ink-muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.lu-group:hover { background: var(--surface-sunken); color: var(--ink); }
+.lu-group.is-active { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+.lu-sep { width: 1px; height: 20px; background: var(--line); margin: 0 6px; flex: none; }
+.lu-spacer { flex: 1; }
+
+/* Inputs + search */
+.lu-input { font: inherit; font-size: 13px; height: var(--control-h); box-sizing: border-box; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); min-width: 0; }
+.lu-input::placeholder { color: var(--ink-muted); }
+.lu-search { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1); background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-popover); }
+.lu-search__field { position: relative; display: flex; align-items: center; }
+.lu-search__field .lu-icon { position: absolute; left: 10px; color: var(--ink-muted); }
+.lu-search__field .lu-input { padding-left: 32px; width: 240px; }
+.lu-search__count { font-size: 11px; color: var(--ink-muted); padding: 0 var(--space-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lu-toggle { font: inherit; font-size: 12px; font-weight: 600; height: var(--control-h-sm); min-width: 28px; padding: 0 6px; border-radius: var(--radius-sm); border: 0; background: transparent; color: var(--ink-muted); cursor: pointer; }
+.lu-toggle.is-on { background: var(--selected); color: var(--brand); }
+
+/* Color picker */
+.lu-swatches { display: inline-flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-pill); box-shadow: var(--shadow-popover); }
+.lu-swatch { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line-strong); padding: 0; cursor: pointer; }
+.lu-swatch.is-selected { box-shadow: 0 0 0 2px var(--surface-raised), 0 0 0 4px var(--focus); }
+
+/* Page thumbnail */
+.lu-thumbs { display: flex; gap: var(--space-4); padding: var(--space-4); background: var(--surface-sunken); align-items: flex-start; }
+.lu-thumb { display: flex; flex-direction: column; align-items: center; gap: 6px; border: 0; background: transparent; padding: 0; cursor: pointer; font: inherit; }
+.lu-thumb__page { width: 96px; height: 124px; background: var(--paper); box-shadow: var(--shadow-page); position: relative; overflow: hidden; }
+.lu-thumb.is-current .lu-thumb__page { outline: 2px solid var(--brand); outline-offset: 3px; }
+.lu-thumb__num { font-size: 11px; line-height: 16px; color: var(--ink-muted); padding: 0 6px; border-radius: var(--radius-sm); }
+.lu-thumb.is-current .lu-thumb__num { background: var(--selected); color: var(--brand); font-weight: 600; }
+.lu-thumb__line { position: absolute; left: 12px; height: 3px; border-radius: 2px; background: #d4d8d6; }
+.lu-thumb__title { position: absolute; left: 12px; height: 6px; border-radius: 2px; background: #3a4446; }
+.lu-thumb__hl { position: absolute; height: 8px; border-radius: 1px; }
+
+/* Zoom bar */
+.lu-zoombar { display: inline-flex; align-items: center; gap: 2px; height: 40px; padding: 0 var(--space-1); box-sizing: border-box; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-pill); box-shadow: var(--shadow-popover); }
+.lu-zoombar .lu-iconbtn { border-radius: var(--radius-pill); }
+.lu-zoombar__page { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-muted); padding: 0 var(--space-1); font-variant-numeric: tabular-nums; }
+.lu-zoombar__page .lu-input { width: 44px; height: var(--control-h-sm); padding: 0 6px; text-align: center; font-size: 12px; }
+.lu-zoombar__zoom { font: inherit; font-size: 12px; font-weight: 500; height: var(--control-h-sm); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; min-width: 52px; }
+.lu-zoombar__zoom:hover { background: var(--surface-sunken); }
+
+/* Dialog */
+.lu-scrim { background: var(--scrim); padding: var(--space-8) var(--space-6); display: grid; place-items: center; }
+.lu-dialog { width: 420px; max-width: 100%; background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-dialog); color: var(--ink); }
+.lu-dialog__head { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-5) var(--space-5) 0; }
+.lu-dialog__title { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em; flex: 1; }
+.lu-dialog__body { padding: var(--space-2) var(--space-5) var(--space-5); color: var(--ink-muted); }
+.lu-dialog__body p { margin: 0 0 var(--space-3); }
+.lu-dialog__foot { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-top: 1px solid var(--line); }
+.lu-check { display: flex; align-items: center; gap: var(--space-2); color: var(--ink); }
+.lu-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--brand); }
+
+/* Notice */
+.lu-notice { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); font-size: 13px; line-height: 20px; max-width: 460px; }
+.lu-notice .lu-icon { margin-top: 2px; }
+.lu-notice--info { background: var(--brand-soft); color: var(--ink); }
+.lu-notice--info .lu-icon { color: var(--brand); }
+.lu-notice--success { background: var(--success-soft); color: var(--ink); }
+.lu-notice--success .lu-icon { color: var(--success); }
+.lu-notice--warning { background: var(--warning-soft); color: var(--ink); }
+.lu-notice--warning .lu-icon { color: var(--warning); }
+.lu-notice--danger { background: var(--danger-soft); color: var(--ink); }
+.lu-notice--danger .lu-icon { color: var(--danger); }
+.lu-notice--tip { background: var(--lumen-soft); color: var(--ink); }
+.lu-notice--tip .lu-icon, .lu-notice--tip b { color: var(--lumen-ink); }

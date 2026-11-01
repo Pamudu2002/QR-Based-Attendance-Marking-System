@@ -1,0 +1,307 @@
+// CSE Attendance data model. See docs/PLAN.md §6.6.
+// Schema changes go through a new migration. Never edit an applied one.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Lecturers and auth ──────────────────────────────────────────────────────
+
+model Lecturer {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  modules       Module[]
+  refreshTokens RefreshToken[]
+}
+
+/// Opaque refresh token, stored hashed. Rotated on every use; reusing a
+/// rotated token revokes the whole family. Owner is a lecturer or a device.
+model RefreshToken {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  familyId   String
+  lecturerId String?
+  deviceId   String?
+  /// false = browser-session cookie ("Keep me logged in" unchecked)
+  persistent Boolean   @default(true)
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  lecturer Lecturer? @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+  device   Device?   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([familyId])
+}
+
+// ── Modules and rosters ─────────────────────────────────────────────────────
+
+model Module {
+  id               String    @id @default(cuid())
+  lecturerId       String
+  intake           String
+  semester         String
+  code             String
+  name             String
+  registrationOpen Boolean   @default(false)
+  regSecret        String
+  regIntervalSec   Int       @default(30)
+  archivedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  lecturer           Lecturer            @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+  roster             RosterEntry[]
+  sessions           Session[]
+  registrationEvents RegistrationEvent[]
+
+  @@unique([lecturerId, intake, semester, code])
+}
+
+/// One per index number, shared across modules. Names live on RosterEntry.
+model Student {
+  id          String   @id @default(cuid())
+  indexNumber String   @unique
+  createdAt   DateTime @default(now())
+
+  roster     RosterEntry[]
+  devices    Device[]
+  attendance Attendance[]
+  attempts   Attempt[]
+}
+
+enum AddedVia {
+  MANUAL
+  CSV
+}
+
+model RosterEntry {
+  id                 String    @id @default(cuid())
+  moduleId           String
+  studentId          String
+  rosterName         String
+  addedVia           AddedVia
+  addedAt            DateTime  @default(now())
+  /// null = not registered yet
+  registeredAt       DateTime?
+  registeredDeviceId String?
+
+  module           Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student          Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  registeredDevice Device? @relation(fields: [registeredDeviceId], references: [id], onDelete: SetNull)
+
+  @@unique([moduleId, studentId])
+}
+
+// ── Devices and registration ────────────────────────────────────────────────
+
+enum KeyLevel {
+  STRONGBOX
+  TEE
+  SOFTWARE
+}
+
+enum DeviceStatus {
+  ACTIVE
+  REVOKED
+}
+
+/// At most one ACTIVE device per student (partial unique index in the migration).
+model Device {
+  id           String       @id @default(cuid())
+  studentId    String?
+  /// X.509 SubjectPublicKeyInfo DER, base64
+  publicKey    String
+  keyLevel     KeyLevel
+  model        String
+  manufacturer String
+  androidSdk   Int
+  status       DeviceStatus @default(ACTIVE)
+  /// Experiment phone label, e.g. "P1-lowend"
+  label        String?
+  createdAt    DateTime     @default(now())
+  boundAt      DateTime?
+
+  student            Student?            @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  refreshTokens      RefreshToken[]
+  rosterEntries      RosterEntry[]
+  registrationEvents RegistrationEvent[]
+  attempts           Attempt[]
+
+  @@index([studentId])
+}
+
+enum RegistrationVerdict {
+  REGISTERED
+  ALREADY_REGISTERED
+  BAD_TOKEN
+  EXPIRED
+  BAD_SIGNATURE
+  REGISTRATION_CLOSED
+  NOT_ON_ROSTER
+  NAME_MISMATCH
+  DEVICE_BOUND_TO_OTHER_STUDENT
+  STUDENT_HAS_OTHER_DEVICE
+}
+
+model RegistrationEvent {
+  id               String              @id @default(cuid())
+  moduleId         String
+  deviceId         String?
+  indexNumberTyped String
+  verdict          RegistrationVerdict
+  at               DateTime            @default(now())
+
+  module Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([moduleId, at])
+}
+
+// ── Sessions, check-in windows and attendance ───────────────────────────────
+
+/// CHECK ("endsAt" > "startsAt") is added in the migration.
+model Session {
+  id             String   @id @default(cuid())
+  moduleId       String
+  title          String
+  startsAt       DateTime
+  endsAt         DateTime
+  venue          String
+  opensBeforeMin Int      @default(15)
+  lateAfterMin   Int      @default(15)
+  expectedSsid   String?
+  isExperiment   Boolean  @default(false)
+  /// Shared by sessions created together with "Repeat every week"
+  seriesId       String?
+  createdAt      DateTime @default(now())
+
+  module     Module          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  windows    CheckinWindow[]
+  attendance Attendance[]
+
+  @@index([moduleId, startsAt])
+}
+
+enum WindowMode {
+  NORMAL
+  EXP_GENUINE
+  EXP_RELAY
+}
+
+model CheckinWindow {
+  id          String     @id @default(cuid())
+  sessionId   String
+  intervalSec Int
+  graceSec    Int        @default(2)
+  secret      String
+  enforceWifi Boolean    @default(true)
+  mode        WindowMode @default(NORMAL)
+  label       String?
+  startedAt   DateTime   @default(now())
+  endedAt     DateTime?
+
+  session  Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  attempts Attempt[]
+
+  @@index([sessionId])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  EXCUSED
+}
+
+enum AttendanceSource {
+  QR
+  MANUAL
+}
+
+/// Absent = registered for the module but no row for the session.
+model Attendance {
+  id        String           @id @default(cuid())
+  sessionId String
+  studentId String
+  status    AttendanceStatus
+  source    AttendanceSource
+  attemptId String?
+  markedAt  DateTime         @default(now())
+  /// Lecturer id for manual marks
+  markedBy  String?
+  note      String?
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+}
+
+// ── Check-in attempts (the experiment data) ─────────────────────────────────
+
+enum AttemptVerdict {
+  OK
+  EXPIRED
+  BAD_TOKEN
+  BAD_SIGNATURE
+  WRONG_NETWORK
+  UNKNOWN_DEVICE
+  DEVICE_REVOKED
+  NOT_REGISTERED
+  OUTSIDE_TIME
+  DUPLICATE
+  NO_DECODE
+  CANCELLED
+}
+
+model Attempt {
+  /// Client-generated UUID, so retried uploads are idempotent
+  id              String         @id
+  windowId        String?
+  deviceId        String?
+  studentId       String?
+
+  // Labels from the run sheet (experiment settings in the app)
+  phoneLabel      String?
+  distanceRow     String?
+  distanceM       Float?
+  role            String?
+  runNo           Int?
+  attemptNo       Int?
+
+  // Client timings (SystemClock.elapsedRealtimeNanos, converted to ms)
+  decodeMs        Float?
+  framesProcessed Int?
+  framesDropped   Int?
+  biometricMs     Float?
+  postRttMs       Float?
+  totalMs         Float?
+  authMethod      String?
+  androidSdk      Int?
+
+  // Server fields (server clock only)
+  seq             Int?
+  issuedAt        DateTime?
+  receivedAt      DateTime?
+  tokenAgeMs      Int?
+
+  ssid            String?
+  wifiOk          Boolean?
+  verdict         AttemptVerdict
+  reason          String?
+  createdAt       DateTime       @default(now())
+
+  window  CheckinWindow? @relation(fields: [windowId], references: [id], onDelete: SetNull)
+  device  Device?        @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  student Student?       @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@index([windowId])
+}

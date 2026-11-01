@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Modules</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/lumora/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="{{root}}">
+<dc-import name="Sidebar" active="modules" dark="{{dark}}" minh="1000px" hint-size="248px,1000px"></dc-import>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<dc-import name="Topbar" crumb="Modules" dark="{{dark}}" toggle="{{toggle}}" hint-size="100%,44px"></dc-import>
+<main style="width: 100%; max-width: 1180px; box-sizing: border-box; padding: 24px 32px 40px; display: flex; flex-direction: column; gap: 20px">
+
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+    <div>
+      <h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Modules</h1>
+      <p style="margin: 2px 0 0; color: var(--ink-muted)">3 active modules · 182 students · 128 registered on the app</p>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+      <div role="group" aria-label="Show" style="display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line)">
+        <button type="button" class="lu-toggle is-on" aria-pressed="true" style="border-radius: var(--radius-pill); padding: 0 12px">Active</button>
+        <button type="button" class="lu-toggle" aria-pressed="false" style="border-radius: var(--radius-pill); padding: 0 12px">Archived</button>
+      </div>
+      <a class="lu-btn" href="#new-module" style="text-decoration: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New module</a>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+    <div style="flex: 999 1 560px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px">
+      <sc-for list="{{modules}}" as="m" hint-placeholder-count="3">
+        <article style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px">
+            <span style="display: flex; flex-direction: column; gap: 4px"><span class="lu-badge" style="align-self: flex-start">{{m.intake}}</span><span style="font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted)">{{m.full}}</span></span>
+            <sc-if value="{{m.open}}" hint-placeholder-val="{{true}}"><span class="lu-badge lu-badge--success"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Registration open</span></sc-if>
+            <sc-if value="{{m.closed}}" hint-placeholder-val="{{false}}"><span class="lu-badge"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Registration closed</span></sc-if>
+          </div>
+          <a href="PortalStudents.dc.html" style="font-size: 15px; line-height: 22px; font-weight: 600; color: var(--ink); text-decoration: none">{{m.name}}</a>
+          <dl style="margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px; border-radius: var(--radius-md); background: var(--surface-sunken)">
+            <div><dt style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Students</dt><dd style="margin: 0; font-weight: 600">{{m.students}}</dd></div>
+            <div><dt style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Registered</dt><dd style="margin: 0; font-weight: 600">{{m.registered}}</dd></div>
+            <div><dt style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Avg. attendance</dt><dd style="{{m.attStyle}}">{{m.att}}</dd></div>
+          </dl>
+          <span style="display: flex; align-items: center; gap: 6px; color: var(--ink-muted)"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>{{m.next}}</span>
+          <div style="display: flex; gap: 8px; margin-top: auto">
+            <a class="lu-btn" href="PortalStudents.dc.html" style="text-decoration: none; flex: 1; justify-content: center">Open module</a>
+            <a class="lu-btn lu-btn--ghost" href="ProjectorRegister.dc.html" style="text-decoration: none">Registration QR</a>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+
+    <form id="new-module" aria-labelledby="nm-title" style="flex: 1 1 288px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <div><h2 id="nm-title" style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">New module</h2><p style="margin: 2px 0 0; color: var(--ink-muted)">Students see it the same way as on Moodle.</p></div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Intake<input class="lu-input" value="In22"></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Semester<input class="lu-input" value="S7"></label>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Module code<input class="lu-input" value="CS4580" aria-invalid="true" style="border-color: var(--danger)"><span role="alert" style="display: flex; align-items: center; gap: 6px; font-weight: 400; color: var(--danger)"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 14px; height: 14px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg>You already have In22-S7-CS4580. Use another code.</span></label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Module name<input class="lu-input" placeholder="For example, Mobile Computing"></label>
+      <div style="padding: 10px 12px; border-radius: var(--radius-md); background: var(--surface-sunken); color: var(--ink-muted)">Shown as <span style="color: var(--ink); font-weight: 600">In22-S7-CS4580 - [Module name]</span></div>
+      <button type="button" class="lu-btn lu-btn--primary" style="justify-content: center">Create module</button>
+    </form>
+  </div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  lu(dark) {
+    var T = {'canvas':['#e8eae6','#0d1112'],'surface':['#ffffff','#161b1c'],'surface-sunken':['#f4f5f2','#121718'],'surface-raised':['#ffffff','#1e2526'],'line':['#e0e3de','#2a3233'],'line-strong':['#868e89','#66726f'],'ink':['#141b1c','#e7eceb'],'ink-muted':['#545f61','#9eaaab'],'brand':['#0d6767','#5cc4bd'],'brand-hover':['#0a5656','#7dd3cd'],'brand-soft':['#dcefec','#13302e'],'on-brand':['#ffffff','#071615'],'selected':['#e3f1ef','#163331'],'focus':['#0d6767','#6fd0c9'],'lumen':['#e8a13a','#f0b45a'],'lumen-soft':['#fbeed6','#3a2a10'],'lumen-ink':['#7a4807','#f0b45a'],'on-lumen':['#2a1b05','#2a1b05'],'success':['#1d7346','#5fca8e'],'success-soft':['#ddf1e4','#11291b'],'warning':['#8f5400','#f0b54a'],'warning-soft':['#fcefd6','#33240a'],'danger':['#b42318','#f8806f'],'danger-soft':['#fde4e1','#3a1512']};
+    var F = {'paper':'#ffffff','font-ui':'"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif','font-display':'Newsreader, Georgia, "Times New Roman", serif','font-mono':'"Cascadia Mono", ui-monospace, "SF Mono", Consolas, monospace','space-1':'4px','space-2':'8px','space-3':'12px','space-4':'16px','space-5':'20px','space-6':'24px','radius-sm':'4px','radius-md':'6px','radius-lg':'10px','radius-pill':'999px','control-h':'32px','control-h-sm':'28px','icon-sm':'16px','icon-md':'18px'};
+    var o = {};
+    for (var k in T) o['--' + k] = T[k][dark ? 1 : 0];
+    for (var j in F) o['--' + j] = F[j];
+    return o;
+  }
+  renderVals() {
+    var s = this.state || {};
+    var dark = s.dark != null ? s.dark : !!this.props.dark;
+    var data = [
+      ['In22 · S7', 'In22-S7-CS4473', 'Mobile Computing', 60, 42, 86, true, 'Next: Tue 3 Nov · 10:15 · Lecture Hall A'],
+      ['In22 · S7', 'In22-S7-CS4580', 'Advanced Data Structures', 58, 55, 91, false, 'Next: Thu 5 Nov · 13:15 · Lab 2'],
+      ['In22 · S7', 'In22-S7-MA4160', 'Advanced Operational Research', 64, 31, 79, true, 'Next: Mon 9 Nov · 08:15 · Lecture Hall C']
+    ];
+    var modules = data.map(function (d) {
+      var low = d[5] < 80;
+      return { intake: d[0], full: d[1], name: d[2], students: d[3], registered: d[4] + ' of ' + d[3], att: d[5] + '%' + (low ? ' · below 80%' : ''), open: d[6], closed: !d[6],
+        attStyle: { margin: 0, fontWeight: 600, color: low ? 'var(--warning)' : 'var(--ink)' }, next: d[7] };
+    });
+    var self = this;
+    return { root: Object.assign(this.lu(dark), { minHeight: '100vh', display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', background: 'var(--surface-sunken)', color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: '20px' }), dark: dark, modules: modules, toggle: function () { self.setState({ dark: !dark }); } };
+  }
+}
+</script>
+</body>
+</html>

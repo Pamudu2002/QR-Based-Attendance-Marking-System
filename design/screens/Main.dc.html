@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dashboard</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/lumora/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="{{root}}">
+<dc-import name="Sidebar" active="dashboard" dark="{{dark}}" minh="1100px" hint-size="248px,1100px"></dc-import>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<dc-import name="Topbar" crumb="Dashboard" dark="{{dark}}" toggle="{{toggle}}" hint-size="100%,44px"></dc-import>
+<main style="width: 100%; max-width: 1180px; box-sizing: border-box; padding: 24px 32px 40px; display: flex; flex-direction: column; gap: 20px">
+
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+    <div>
+      <h1 style="margin: 0; font-family: var(--font-display); font-size: 28px; line-height: 34px; font-weight: 500">Good morning, Dr. Ranasinghe</h1>
+      <p style="margin: 4px 0 0; color: var(--ink-muted)">Tuesday 3 November 2026 · Semester 7 · 3 modules</p>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <a class="lu-btn" href="PortalSessions.dc.html" style="text-decoration: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Add session</a>
+      <a class="lu-btn lu-btn--primary" href="Projector.dc.html" style="text-decoration: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path></svg>Start check-in</a>
+    </div>
+  </div>
+
+  <section aria-label="Messages" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px">
+    <div class="lu-notice lu-notice--success" role="status" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.5 2.5L16 9.5"></path></svg><span><b>Import finished.</b> 58 students added to CS4473 from cs4473_class_list.csv.</span></div>
+    <div class="lu-notice lu-notice--warning" role="status" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 4.3L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"></path></svg><span style="flex: 1"><b>18 students haven't registered.</b> They can't check in to CS4473 until they scan the registration QR.</span></div>
+    <div class="lu-notice lu-notice--danger" role="alert" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg><span style="flex: 1"><b>3 registrations failed today.</b> 2 names didn't match and 1 index number isn't on the list.</span><a class="lu-btn lu-btn--sm" href="PortalStudents.dc.html" style="text-decoration: none">Review</a></div>
+    <div class="lu-notice lu-notice--tip" role="note" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"></path></svg><span><b>Tip:</b> the check-in code changes every 10 s, so a screenshot sent to a friend stops working.</span></div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
+    <section style="flex: 1 1 340px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">Next class</h2><span class="lu-badge lu-badge--brand"><svg class="lu-icon" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>In 25 min</span></div>
+      <div>
+        <div style="color: var(--ink-muted)">In22-S7-CS4473 - Mobile Computing</div>
+        <div style="font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em; margin-top: 2px">Lecture 9 · Sensors</div>
+      </div>
+      <dl style="margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px">
+        <dt style="color: var(--ink-muted)">Time</dt><dd style="margin: 0">10:15 – 12:15 · late after 10:30</dd>
+        <dt style="color: var(--ink-muted)">Venue</dt><dd style="margin: 0">Lecture Hall A</dd>
+        <dt style="color: var(--ink-muted)">Wi-Fi</dt><dd style="margin: 0">UniWiFi (checked)</dd>
+      </dl>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between"><span style="font-weight: 600">Registered</span><span style="color: var(--ink-muted)">42 of 60</span></div>
+        <span style="height: 6px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; display: block"><span style="display: block; width: 70%; height: 100%; background: var(--brand); border-radius: 999px"></span></span>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: auto">
+        <a class="lu-btn" href="ProjectorRegister.dc.html" style="text-decoration: none">Show registration QR</a>
+        <a class="lu-btn lu-btn--ghost" href="PortalSessions.dc.html" style="text-decoration: none">Edit session</a>
+      </div>
+    </section>
+
+    <section aria-label="Key numbers" style="flex: 2 1 520px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+      <div style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; font-weight: 500; color: var(--ink-muted)">Average attendance</span>
+        <span style="font-size: 20px; line-height: 28px; font-weight: 600">86%</span>
+        <span><span class="lu-badge lu-badge--success"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M7 17L17 7M8 7h9v9"></path></svg>+3 pts this week</span></span>
+      </div>
+      <div style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; font-weight: 500; color: var(--ink-muted)">Registered on the app</span>
+        <span style="font-size: 20px; line-height: 28px; font-weight: 600">128 <span style="font-size: 13px; font-weight: 400; color: var(--ink-muted)">of 182 students</span></span>
+        <span style="height: 6px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; display: block; margin-top: 6px"><span style="display: block; width: 70%; height: 100%; background: var(--brand); border-radius: 999px"></span></span>
+      </div>
+      <div style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; font-weight: 500; color: var(--ink-muted)">Students below 80%</span>
+        <span style="font-size: 20px; line-height: 28px; font-weight: 600">14</span>
+        <span><span class="lu-badge lu-badge--warning"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 4.3L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"></path></svg>Needs attention</span></span>
+      </div>
+      <div style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 12px; font-weight: 500; color: var(--ink-muted)">Rejected check-ins this week</span>
+        <span style="font-size: 20px; line-height: 28px; font-weight: 600">5</span>
+        <span><span class="lu-badge lu-badge--danger"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-6 6M9 9l6 6"></path></svg>4 expired codes · 1 wrong Wi-Fi</span></span>
+      </div>
+    </section>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
+    <section style="flex: 999 1 520px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px">
+        <div><h2 style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">Attendance by lecture</h2><p style="margin: 2px 0 0; color: var(--ink-muted)">CS4473 · % of 42 registered students</p></div>
+        <div style="display: flex; gap: 14px; font-size: 12px; color: var(--ink-muted); align-items: center">
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--brand)"></span>On time</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--lumen)"></span>Late</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; border-top: 2px dashed var(--danger)"></span>80% rule</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 200px; font-size: 11px; color: var(--ink-muted); text-align: right; width: 32px"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+          <div style="position: relative; height: 200px; display: flex; align-items: flex-end; gap: 14px; border-bottom: 1px solid var(--line)">
+            <div style="position: absolute; left: 0; right: 0; bottom: 160px; border-top: 2px dashed var(--danger)"></div>
+            <sc-for list="{{bars}}" as="b" hint-placeholder-count="8">
+              <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%">
+                <div style="{{b.late}}"></div>
+                <div style="{{b.ontime}}"></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 14px"><sc-for list="{{bars}}" as="b" hint-placeholder-count="8"><span style="flex: 1; text-align: center; font-size: 11px; color: var(--ink-muted)">{{b.label}}</span></sc-for></div>
+        </div>
+      </div>
+    </section>
+
+    <section style="flex: 1 1 300px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">Registration by module</h2><a href="PortalStudents.dc.html" style="color: var(--brand); font-weight: 600; text-decoration: none">View all</a></div>
+      <sc-for list="{{reg}}" as="r" hint-placeholder-count="3">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">{{r.name}}</span><span style="color: var(--ink-muted); white-space: nowrap">{{r.count}}</span></div>
+          <span style="height: 6px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; display: block"><span style="{{r.bar}}"></span></span>
+        </div>
+      </sc-for>
+      <p style="margin: auto 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--ink-muted)">Students who haven't registered can't check in. Show the registration QR at the start of class.</p>
+    </section>
+  </div>
+
+  <section style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden">
+    <div style="padding: 12px 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--line)">
+      <h2 style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">Recent check-ins</h2>
+      <div style="display: flex; gap: 8px; align-items: center">
+        <input class="lu-input" type="search" aria-label="Search check-ins" placeholder="Search index or name" style="width: 200px">
+        <button type="button" class="lu-btn"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 8v6l-4-2v-4z"></path></svg>Filter</button>
+      </div>
+    </div>
+    <div style="overflow-x: auto">
+      <table style="width: 100%; border-collapse: collapse; min-width: 680px">
+        <thead><tr style="background: var(--surface-sunken)">
+          <th style="text-align: left; padding: 8px 16px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Index no.</th>
+          <th style="text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Student</th>
+          <th style="text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Module</th>
+          <th style="text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Session</th>
+          <th style="text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Status</th>
+          <th style="text-align: right; padding: 8px 16px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">Time</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{recent}}" as="r" hint-placeholder-count="6">
+            <tr style="border-top: 1px solid var(--line)">
+              <td style="padding: 10px 16px; font-family: var(--font-mono); font-size: 12px">{{r.index}}</td>
+              <td style="padding: 10px 12px; font-weight: 600">{{r.name}}</td>
+              <td style="padding: 10px 12px; color: var(--ink-muted)">{{r.module}}</td>
+              <td style="padding: 10px 12px; color: var(--ink-muted)">{{r.session}}</td>
+              <td style="padding: 10px 12px">
+                <sc-if value="{{r.ok}}" hint-placeholder-val="{{true}}"><span class="lu-badge lu-badge--success"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{r.status}}</span></sc-if>
+                <sc-if value="{{r.late}}" hint-placeholder-val="{{false}}"><span class="lu-badge lu-badge--warning"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>{{r.status}}</span></sc-if>
+                <sc-if value="{{r.bad}}" hint-placeholder-val="{{false}}"><span class="lu-badge lu-badge--danger"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M6 6l12 12M18 6L6 18"></path></svg>{{r.status}}</span></sc-if>
+              </td>
+              <td style="padding: 10px 16px; text-align: right; color: var(--ink-muted); font-variant-numeric: tabular-nums">{{r.time}}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  lu(dark) {
+    var T = {'canvas':['#e8eae6','#0d1112'],'surface':['#ffffff','#161b1c'],'surface-sunken':['#f4f5f2','#121718'],'surface-raised':['#ffffff','#1e2526'],'line':['#e0e3de','#2a3233'],'line-strong':['#868e89','#66726f'],'ink':['#141b1c','#e7eceb'],'ink-muted':['#545f61','#9eaaab'],'brand':['#0d6767','#5cc4bd'],'brand-hover':['#0a5656','#7dd3cd'],'brand-soft':['#dcefec','#13302e'],'on-brand':['#ffffff','#071615'],'selected':['#e3f1ef','#163331'],'focus':['#0d6767','#6fd0c9'],'lumen':['#e8a13a','#f0b45a'],'lumen-soft':['#fbeed6','#3a2a10'],'lumen-ink':['#7a4807','#f0b45a'],'on-lumen':['#2a1b05','#2a1b05'],'success':['#1d7346','#5fca8e'],'success-soft':['#ddf1e4','#11291b'],'warning':['#8f5400','#f0b54a'],'warning-soft':['#fcefd6','#33240a'],'danger':['#b42318','#f8806f'],'danger-soft':['#fde4e1','#3a1512'],'shadow-popover':['0 2px 6px rgba(16,24,26,0.10), 0 8px 24px rgba(16,24,26,0.12)','0 2px 6px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.5)']};
+    var F = {'paper':'#ffffff','font-ui':'"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif','font-display':'Newsreader, Georgia, "Times New Roman", serif','font-mono':'"Cascadia Mono", ui-monospace, "SF Mono", Consolas, monospace','space-1':'4px','space-2':'8px','space-3':'12px','space-4':'16px','space-5':'20px','space-6':'24px','space-8':'32px','space-10':'40px','radius-sm':'4px','radius-md':'6px','radius-lg':'10px','radius-pill':'999px','control-h':'32px','control-h-sm':'28px','icon-sm':'16px','icon-md':'18px'};
+    var o = {};
+    for (var k in T) o['--' + k] = T[k][dark ? 1 : 0];
+    for (var j in F) o['--' + j] = F[j];
+    return o;
+  }
+  renderVals() {
+    var s = this.state || {};
+    var dark = s.dark != null ? s.dark : !!this.props.dark;
+    var data = [['L1',81,10],['L2',86,7],['L3',79,12],['L4',88,5],['L5',74,14],['L6',90,5],['L7',83,10],['L8',93,2]];
+    var bars = data.map(function (d) {
+      return { label: d[0], ontime: { height: (d[1] * 2) + 'px', background: 'var(--brand)' }, late: { height: (d[2] * 2) + 'px', background: 'var(--lumen)', borderRadius: '3px 3px 0 0' } };
+    });
+    var reg = [['CS4473 Mobile Computing',42,60],['CS4580 Advanced Data Structures',55,58],['MA4160 Adv. Operational Research',31,64]].map(function (r) {
+      return { name: r[0], count: r[1] + ' of ' + r[2], bar: { display: 'block', width: Math.round(r[1] / r[2] * 100) + '%', height: '100%', background: 'var(--brand)', borderRadius: '999px' } };
+    });
+    var row = function (index, name, module, session, status, kind, time) { return { index: index, name: name, module: module, session: session, status: status, ok: kind === 'ok', late: kind === 'late', bad: kind === 'bad', time: time }; };
+    var recent = [
+      row('220366X','Lokuhewa P. C.','CS4473','Lecture 8','Present','ok','27 Oct, 10:16'),
+      row('220720E','Wijesinghe L. A. V. B.','CS4473','Lecture 8','Present','ok','27 Oct, 10:17'),
+      row('220101A','Perera K. D.','CS4473','Lecture 8','Late','late','27 Oct, 10:41'),
+      row('220245K','Fernando S. M.','CS4580','Lecture 8','Present','ok','29 Oct, 13:18'),
+      row('220512P','Jayasinghe R. T.','CS4580','Lecture 8','Rejected · code expired','bad','29 Oct, 13:22'),
+      row('220633N','Senanayake H. M.','MA4160','Lecture 9','Present','ok','26 Oct, 08:19')
+    ];
+    var self = this;
+    return {
+      root: Object.assign(this.lu(dark), { minHeight: '100vh', display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', background: 'var(--surface-sunken)', color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: '20px' }),
+      dark: dark, bars: bars, reg: reg, recent: recent,
+      toggle: function () { self.setState({ dark: !dark }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

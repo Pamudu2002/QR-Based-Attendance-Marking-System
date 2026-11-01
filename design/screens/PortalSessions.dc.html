@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sessions</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/lumora/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="{{root}}">
+<dc-import name="Sidebar" active="sessions" dark="{{dark}}" minh="1100px" hint-size="248px,1100px"></dc-import>
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+<dc-import name="Topbar" crumb="Sessions" dark="{{dark}}" toggle="{{toggle}}" hint-size="100%,44px"></dc-import>
+<main style="width: 100%; max-width: 1180px; box-sizing: border-box; padding: 24px 32px 40px; display: flex; flex-direction: column; gap: 16px">
+
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+    <div>
+      <h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Sessions</h1>
+      <p style="margin: 2px 0 0; color: var(--ink-muted)">Your real classes. Start check-in from a session during its time.</p>
+    </div>
+    <label style="display: flex; align-items: center; gap: 8px; color: var(--ink-muted)">Module
+      <select class="lu-input" style="padding-right: 8px"><option>All modules</option><option>In22-S7-CS4473 - Mobile Computing</option><option>In22-S7-CS4580 - Advanced Data Structures</option><option>In22-S7-MA4160 - Advanced Operational Research</option></select>
+    </label>
+  </div>
+
+  <div class="lu-notice lu-notice--info" role="status" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg><span style="flex: 1">Check-in for <b>CS4473 Lecture 9</b> opens at 10:00, 15 minutes before the class.</span><a class="lu-btn lu-btn--sm" href="Projector.dc.html" style="text-decoration: none">Open check-in</a></div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+    <section style="flex: 999 1 620px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden">
+      <div style="padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--line)">
+        <div style="display: flex; align-items: center; gap: 4px">
+          <a class="lu-iconbtn" href="PortalSessions.dc.html" aria-label="October" title="October"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+          <h2 style="margin: 0 4px; font-size: 15px; line-height: 22px; font-weight: 600">November 2026</h2>
+          <a class="lu-iconbtn" href="PortalSessions.dc.html" aria-label="December" title="December"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></a>
+          <button type="button" class="lu-btn lu-btn--sm lu-btn--ghost">Today</button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--ink-muted)">
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--brand)"></span>CS4473</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--lumen)"></span>CS4580</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--line-strong)"></span>MA4160</span>
+        </div>
+      </div>
+      <div style="overflow-x: auto">
+        <div style="min-width: 640px">
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--surface-sunken); border-bottom: 1px solid var(--line)">
+            <sc-for list="{{weekdays}}" as="w" hint-placeholder-count="7"><div style="padding: 6px 10px; font-size: 12px; font-weight: 500; color: var(--ink-muted)">{{w}}</div></sc-for>
+          </div>
+          <sc-for list="{{weeks}}" as="week" hint-placeholder-count="5">
+            <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--line)">
+              <sc-for list="{{week.days}}" as="d" hint-placeholder-count="7">
+                <div style="{{d.cell}}">
+                  <span style="{{d.num}}">{{d.n}}</span>
+                  <sc-for list="{{d.items}}" as="it" hint-placeholder-count="1">
+                    <a href="{{it.href}}" style="{{it.style}}">{{it.label}}</a>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <div style="flex: 1 1 288px; display: flex; flex-direction: column; gap: 16px">
+      <form aria-labelledby="add-title" style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 12px">
+        <h2 id="add-title" style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">Add session</h2>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Module<select class="lu-input"><option>In22-S7-CS4473 - Mobile Computing</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Title<input class="lu-input" value="Lecture 10"></label>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Date<input class="lu-input" value="10 Nov"></label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Start<input class="lu-input" value="10:15"></label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">End<input class="lu-input" value="12:15"></label>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500">Venue<input class="lu-input" value="Lecture Hall A"></label>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-radius: var(--radius-md); background: var(--surface-sunken)">
+          <label class="lu-check"><input type="checkbox" checked="checked">Repeat every week</label>
+          <span style="display: flex; align-items: center; gap: 6px; color: var(--ink-muted)">for <input class="lu-input" value="4" aria-label="Number of weeks" style="width: 44px; height: 28px; text-align: center; padding: 0 4px"> weeks</span>
+        </div>
+        <details style="color: var(--ink-muted)">
+          <summary style="cursor: pointer; color: var(--ink); font-weight: 600">Check-in rules</summary>
+          <p style="margin: 8px 0 0">Opens 15 min before the start · late after 15 min · Wi-Fi name <span style="font-family: var(--font-mono); font-size: 12px; color: var(--ink)">UniWiFi</span></p>
+        </details>
+        <button type="button" class="lu-btn lu-btn--primary" style="justify-content: center">Save 4 sessions</button>
+      </form>
+
+      <section style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden">
+        <h2 style="margin: 0; padding: 12px 16px; font-size: 15px; line-height: 22px; font-weight: 600; border-bottom: 1px solid var(--line)">Coming up</h2>
+        <div style="padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--selected)"><span style="display: flex; flex-direction: column"><span style="font-weight: 600">CS4473 · Lecture 9</span><span style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Today 10:15 · Lecture Hall A</span></span><span class="lu-badge lu-badge--brand">Today</span></div>
+        <div style="padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid var(--line)"><span style="display: flex; flex-direction: column"><span style="font-weight: 600">CS4580 · Lecture 9</span><span style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Thu 5 Nov 13:15 · Lab 2</span></span><button type="button" class="lu-iconbtn lu-iconbtn--sm" aria-label="More actions for CS4580 Lecture 9"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></button></div>
+        <div style="padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid var(--line)"><span style="display: flex; flex-direction: column"><span style="font-weight: 600">MA4160 · Lecture 10</span><span style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Mon 9 Nov 08:15 · Lecture Hall C</span></span><button type="button" class="lu-iconbtn lu-iconbtn--sm" aria-label="More actions for MA4160 Lecture 10"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></button></div>
+      </section>
+    </div>
+  </div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  lu(dark) {
+    var T = {'canvas':['#e8eae6','#0d1112'],'surface':['#ffffff','#161b1c'],'surface-sunken':['#f4f5f2','#121718'],'surface-raised':['#ffffff','#1e2526'],'line':['#e0e3de','#2a3233'],'line-strong':['#868e89','#66726f'],'ink':['#141b1c','#e7eceb'],'ink-muted':['#545f61','#9eaaab'],'brand':['#0d6767','#5cc4bd'],'brand-hover':['#0a5656','#7dd3cd'],'brand-soft':['#dcefec','#13302e'],'on-brand':['#ffffff','#071615'],'selected':['#e3f1ef','#163331'],'focus':['#0d6767','#6fd0c9'],'lumen':['#e8a13a','#f0b45a'],'lumen-soft':['#fbeed6','#3a2a10'],'lumen-ink':['#7a4807','#f0b45a'],'on-lumen':['#2a1b05','#2a1b05'],'success':['#1d7346','#5fca8e'],'success-soft':['#ddf1e4','#11291b'],'warning':['#8f5400','#f0b54a'],'warning-soft':['#fcefd6','#33240a'],'danger':['#b42318','#f8806f'],'danger-soft':['#fde4e1','#3a1512']};
+    var F = {'paper':'#ffffff','font-ui':'"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif','font-display':'Newsreader, Georgia, "Times New Roman", serif','font-mono':'"Cascadia Mono", ui-monospace, "SF Mono", Consolas, monospace','space-1':'4px','space-2':'8px','space-3':'12px','space-4':'16px','space-5':'20px','space-6':'24px','radius-sm':'4px','radius-md':'6px','radius-lg':'10px','radius-pill':'999px','control-h':'32px','control-h-sm':'28px','icon-sm':'16px','icon-md':'18px'};
+    var o = {};
+    for (var k in T) o['--' + k] = T[k][dark ? 1 : 0];
+    for (var j in F) o['--' + j] = F[j];
+    return o;
+  }
+  renderVals() {
+    var s = this.state || {};
+    var dark = s.dark != null ? s.dark : !!this.props.dark;
+    var chip = function (bg, fg, border) { return { display: 'block', padding: '2px 6px', borderRadius: '4px', background: bg, color: fg, border: '1px solid ' + border, fontSize: '11px', lineHeight: '16px', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }; };
+    var mods = {
+      1: { label: '08:15 MA4160', href: 'PortalAttendance.dc.html', style: chip('var(--surface-sunken)', 'var(--ink)', 'var(--line-strong)') },
+      2: { label: '10:15 CS4473', href: 'Projector.dc.html', style: chip('var(--brand)', 'var(--on-brand)', 'var(--brand)') },
+      4: { label: '13:15 CS4580', href: 'PortalAttendance.dc.html', style: chip('var(--lumen-soft)', 'var(--lumen-ink)', 'var(--lumen)') }
+    };
+    var weeks = [];
+    var day = 1;
+    for (var w = 0; w < 5; w++) {
+      var days = [];
+      for (var c = 0; c < 7; c++) {
+        var inMonth = day <= 30;
+        var isToday = inMonth && day === 3;
+        var items = (inMonth && mods[c]) ? [mods[c]] : [];
+        days.push({
+          n: inMonth ? day : day - 30,
+          items: items,
+          cell: { minHeight: '88px', padding: '6px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '4px', borderRight: c < 6 ? '1px solid var(--line)' : 'none', background: isToday ? 'var(--selected)' : (inMonth ? 'var(--surface)' : 'var(--surface-sunken)') },
+          num: isToday ? { alignSelf: 'flex-start', minWidth: '22px', textAlign: 'center', borderRadius: '999px', background: 'var(--brand)', color: 'var(--on-brand)', fontSize: '12px', fontWeight: 600 } : { fontSize: '12px', color: inMonth ? 'var(--ink)' : 'var(--ink-muted)' }
+        });
+        day++;
+      }
+      weeks.push({ days: days });
+    }
+    var self = this;
+    return { root: Object.assign(this.lu(dark), { minHeight: '100vh', display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', background: 'var(--surface-sunken)', color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: '20px' }), dark: dark, weekdays: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], weeks: weeks, toggle: function () { self.setState({ dark: !dark }); } };
+  }
+}
+</script>
+</body>
+</html>

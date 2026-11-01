@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Module detail</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/lumora/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet><style>body{margin:0}</style></helmet>
+<div style="{{root}}">
+  <div style="flex: 1; min-height: 0; padding: 12px 20px 0; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <a class="lu-iconbtn" href="AppHome.dc.html" aria-label="Back" style="width: 44px; height: 44px"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+      <span class="lu-badge" style="font-family: var(--font-mono); font-weight: 500">In22-S7-CS4473</span>
+    </div>
+    <div>
+      <h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600">Mobile Computing</h1>
+      <p style="margin: 2px 0 0; color: var(--ink-muted)">Dr. N. Ranasinghe · Tuesdays 10:15 · Lecture Hall A</p>
+    </div>
+
+    <section style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; gap: 16px; align-items: center">
+      <div role="img" aria-label="100% attendance, 8 of 8 lectures" style="width: 92px; height: 92px; flex: none; border-radius: 50%; background: conic-gradient(var(--brand) 0 100%, var(--surface-sunken) 0); display: flex; align-items: center; justify-content: center">
+        <div style="width: 74px; height: 74px; border-radius: 50%; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center"><span style="font-size: 20px; line-height: 24px; font-weight: 600">100%</span><span style="font-size: 11px; line-height: 14px; color: var(--ink-muted)">8 of 8</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span class="lu-badge lu-badge--success" style="align-self: flex-start"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Above 80%</span>
+        <span style="font-weight: 600">You can miss 2 more lectures and stay above 80%.</span>
+        <span style="font-size: 12px; line-height: 16px; color: var(--ink-muted)">4 lectures left this semester</span>
+      </div>
+    </section>
+
+    <div role="group" aria-label="Show" style="display: flex; gap: 2px; padding: 2px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line)">
+      <button type="button" class="lu-toggle is-on" aria-pressed="true" style="flex: 1; height: 36px; border-radius: var(--radius-pill); font-size: 13px">History</button>
+      <button type="button" class="lu-toggle" aria-pressed="false" style="flex: 1; height: 36px; border-radius: var(--radius-pill); font-size: 13px">Upcoming 4</button>
+    </div>
+
+    <section style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden">
+      <sc-for list="{{history}}" as="h" hint-placeholder-count="5">
+        <div style="{{h.row}}">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">{{h.title}}</span><span style="font-size: 12px; line-height: 16px; color: var(--ink-muted)">{{h.date}}</span></span>
+          <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+            <sc-if value="{{h.ok}}" hint-placeholder-val="{{true}}"><span class="lu-badge lu-badge--success"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Present</span></sc-if>
+            <sc-if value="{{h.late}}" hint-placeholder-val="{{false}}"><span class="lu-badge lu-badge--warning"><svg class="lu-icon" viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>Late</span></sc-if>
+            <span style="font-family: var(--font-mono); font-size: 11px; line-height: 16px; color: var(--ink-muted)">{{h.time}}</span>
+          </span>
+        </div>
+      </sc-for>
+    </section>
+  </div>
+
+  <nav aria-label="App" style="border-top: 1px solid var(--line); background: var(--surface); padding: 6px 12px 14px; display: flex; justify-content: space-around; align-items: center">
+    <a href="AppHome.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 4px 0; color: var(--ink-muted); text-decoration: none; font-size: 11px"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a2 2 0 0 1-2 2h-3v-6H9v6H6a2 2 0 0 1-2-2z"></path></svg>Home</a>
+    <a href="AppModule.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 4px 0; border-radius: var(--radius-md); background: var(--selected); color: var(--brand); text-decoration: none; font-size: 11px; font-weight: 600"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"></path><path d="M5 18a2 2 0 0 1 2-2h12"></path></svg>Modules</a>
+    <a href="AppScanner.dc.html" aria-label="Scan" style="width: 56px; height: 56px; border-radius: 50%; background: var(--brand); color: var(--on-brand); display: flex; align-items: center; justify-content: center; margin-top: -24px; box-shadow: var(--shadow-popover)"><svg class="lu-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="width: 24px; height: 24px"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16"></path></svg></a>
+    <a href="AppModule.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 4px 0; color: var(--ink-muted); text-decoration: none; font-size: 11px"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>History</a>
+    <a href="AppSettings.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 4px 0; color: var(--ink-muted); text-decoration: none; font-size: 11px"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Settings</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  lu(dark) {
+    var T = {'canvas':['#e8eae6','#0d1112'],'surface':['#ffffff','#161b1c'],'surface-sunken':['#f4f5f2','#121718'],'line':['#e0e3de','#2a3233'],'line-strong':['#868e89','#66726f'],'ink':['#141b1c','#e7eceb'],'ink-muted':['#545f61','#9eaaab'],'brand':['#0d6767','#5cc4bd'],'brand-soft':['#dcefec','#13302e'],'on-brand':['#ffffff','#071615'],'selected':['#e3f1ef','#163331'],'focus':['#0d6767','#6fd0c9'],'success':['#1d7346','#5fca8e'],'success-soft':['#ddf1e4','#11291b'],'warning':['#8f5400','#f0b54a'],'warning-soft':['#fcefd6','#33240a'],'danger':['#b42318','#f8806f'],'danger-soft':['#fde4e1','#3a1512'],'shadow-popover':['0 2px 6px rgba(16,24,26,0.10), 0 8px 24px rgba(16,24,26,0.12)','0 2px 6px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.5)']};
+    var F = {'font-ui':'"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif','font-mono':'"Cascadia Mono", ui-monospace, "SF Mono", Consolas, monospace','space-1':'4px','space-2':'8px','space-3':'12px','space-4':'16px','radius-sm':'4px','radius-md':'6px','radius-lg':'10px','radius-pill':'999px','control-h':'44px','control-h-sm':'36px','icon-sm':'16px','icon-md':'18px'};
+    var o = {};
+    for (var k in T) o['--' + k] = T[k][dark ? 1 : 0];
+    for (var j in F) o['--' + j] = F[j];
+    return o;
+  }
+  renderVals() {
+    var dark = !!this.props.dark;
+    var list = [
+      ['Lecture 8 · Location APIs', 'Tue 27 Oct', 'ok', '10:16'],
+      ['Lecture 7 · Energy', 'Tue 20 Oct', 'ok', '10:13'],
+      ['Lecture 6 · Mobile networks', 'Tue 13 Oct', 'late', '10:38'],
+      ['Lecture 5 · Background work', 'Tue 6 Oct', 'ok', '10:15'],
+      ['Lecture 4 · Storage', 'Tue 29 Sep', 'ok', '10:17']
+    ];
+    var history = list.map(function (h, i) {
+      return { title: h[0], date: h[1], ok: h[2] === 'ok', late: h[2] === 'late', time: h[3], row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '10px 14px', borderTop: i ? '1px solid var(--line)' : 'none' } };
+    });
+    return { root: Object.assign(this.lu(dark), { width: '390px', height: '844px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', background: 'var(--surface-sunken)', color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '14px', lineHeight: '20px', overflow: 'hidden' }), history: history };
+  }
+}
+</script>
+</body>
+</html>

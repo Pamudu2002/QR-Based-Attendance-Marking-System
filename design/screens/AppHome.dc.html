@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Student home</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/lumora/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="{{root}}">
+  <div style="flex: 1; min-height: 0; padding: 16px 20px 0; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <div>
+        <div style="font-size: 12px; line-height: 16px; color: var(--ink-muted)">Tuesday 3 November</div>
+        <h1 style="margin: 2px 0 0; font-family: var(--font-display); font-size: 28px; line-height: 34px; font-weight: 500">Good morning, Pamudu</h1>
+      </div>
+      <button type="button" class="lu-iconbtn" aria-label="Switch light or dark theme" onClick="{{toggle}}" style="width: 44px; height: 44px">
+        <sc-if value="{{light}}" hint-placeholder-val="{{true}}"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg></sc-if>
+        <sc-if value="{{dark}}" hint-placeholder-val="{{false}}"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+      </button>
+    </div>
+
+    <section style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 12px; font-weight: 600; color: var(--ink-muted)">Now</span><span class="lu-badge lu-badge--success"><span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor"></span>Check-in open</span></div>
+      <div><div style="font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted)">In22-S7-CS4473</div><div style="font-size: 18px; line-height: 24px; font-weight: 600; margin-top: 2px">Lecture 9 · Sensors</div><div style="color: var(--ink-muted); margin-top: 2px">10:15 – 12:15 · Lecture Hall A</div></div>
+      <a class="lu-btn lu-btn--primary" href="AppScanner.dc.html" style="height: 48px; justify-content: center; font-size: 15px; text-decoration: none"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16"></path></svg>Scan to check in</a>
+    </section>
+
+    <section aria-label="Overall attendance" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg)">
+      <div style="padding: 12px; border-right: 1px solid var(--line)"><div style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Overall</div><div style="font-size: 20px; line-height: 28px; font-weight: 600">93%</div></div>
+      <div style="padding: 12px; border-right: 1px solid var(--line)"><div style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Present</div><div style="font-size: 20px; line-height: 28px; font-weight: 600">21</div></div>
+      <div style="padding: 12px"><div style="font-size: 11px; line-height: 16px; color: var(--ink-muted)">Late · absent</div><div style="font-size: 20px; line-height: 28px; font-weight: 600">2 · 2</div></div>
+    </section>
+
+    <div class="lu-notice lu-notice--warning" role="status" style="max-width: none"><svg class="lu-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 4.3L2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0z"></path></svg><span><b>MA4160 is close to 80%.</b> Missing 1 more lecture puts you below it.</span></div>
+
+    <section style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden">
+      <div style="padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line)"><h2 style="margin: 0; font-size: 15px; line-height: 22px; font-weight: 600">My modules</h2><a href="AppModule.dc.html" style="color: var(--brand); font-weight: 600; text-decoration: none">See all</a></div>
+      <sc-for list="{{mods}}" as="m" hint-placeholder-count="3">
+        <a href="AppModule.dc.html" style="display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; text-decoration: none; color: var(--ink); border-top: 1px solid var(--line)">
+          <span style="display: flex; justify-content: space-between; gap: 8px"><span style="font-weight: 600">{{m.name}}</span><span style="{{m.pctStyle}}">{{m.pct}}</span></span>
+          <span style="height: 4px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; display: block"><span style="{{m.bar}}"></span></span>
+        </a>
+      </sc-for>
+    </section>
+  </div>
+
+  <nav aria-label="App" style="border-top: 1px solid var(--line); background: var(--surface); padding: 6px 12px 14px; display: flex; justify-content: space-around; align-items: center">
+    <a href="AppHome.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 4px 0; border-radius: var(--radius-md); background: var(--selected); color: var(--brand); text-decoration: none; font-size: 11px; font-weight: 600"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a2 2 0 0 1-2 2h-3v-6H9v6H6a2 2 0 0 1-2-2z"></path></svg>Home</a>
+    <a href="AppModule.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 4px 0; color: var(--ink-muted); text-decoration: none; font-size: 11px"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"></path><path d="M5 18a2 2 0 0 1 2-2h12"></path></svg>Modules</a>
+    <a href="AppScanner.dc.html" aria-label="Scan" style="width: 56px; height: 56px; border-radius: 50%; background: var(--brand); color: var(--on-brand); display: flex; align-items: center; justify-content: center; margin-top: -24px; box-shadow: var(--shadow-popover)"><svg class="lu-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="width: 24px; height: 24px"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M4 12h16"></path></svg></a>
+    <a href="AppModule.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 4px 0; color: var(--ink-muted); text-decoration: none; font-size: 11px"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>History</a>
+    <a href="AppSettings.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; padding: 4px 0; color: var(--ink-muted); text-decoration: none; font-size: 11px"><svg class="lu-icon lu-icon--md" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Settings</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  lu(dark) {
+    var T = {'canvas':['#e8eae6','#0d1112'],'surface':['#ffffff','#161b1c'],'surface-sunken':['#f4f5f2','#121718'],'surface-raised':['#ffffff','#1e2526'],'line':['#e0e3de','#2a3233'],'line-strong':['#868e89','#66726f'],'ink':['#141b1c','#e7eceb'],'ink-muted':['#545f61','#9eaaab'],'brand':['#0d6767','#5cc4bd'],'brand-hover':['#0a5656','#7dd3cd'],'brand-soft':['#dcefec','#13302e'],'on-brand':['#ffffff','#071615'],'selected':['#e3f1ef','#163331'],'focus':['#0d6767','#6fd0c9'],'lumen':['#e8a13a','#f0b45a'],'lumen-soft':['#fbeed6','#3a2a10'],'lumen-ink':['#7a4807','#f0b45a'],'on-lumen':['#2a1b05','#2a1b05'],'success':['#1d7346','#5fca8e'],'success-soft':['#ddf1e4','#11291b'],'warning':['#8f5400','#f0b54a'],'warning-soft':['#fcefd6','#33240a'],'danger':['#b42318','#f8806f'],'danger-soft':['#fde4e1','#3a1512'],'shadow-popover':['0 2px 6px rgba(16,24,26,0.10), 0 8px 24px rgba(16,24,26,0.12)','0 2px 6px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.5)']};
+    var F = {'paper':'#ffffff','font-ui':'"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif','font-display':'Newsreader, Georgia, "Times New Roman", serif','font-mono':'"Cascadia Mono", ui-monospace, "SF Mono", Consolas, monospace','space-1':'4px','space-2':'8px','space-3':'12px','space-4':'16px','radius-sm':'4px','radius-md':'6px','radius-lg':'10px','radius-pill':'999px','control-h':'44px','control-h-sm':'36px','icon-sm':'16px','icon-md':'18px'};
+    var o = {};
+    for (var k in T) o['--' + k] = T[k][dark ? 1 : 0];
+    for (var j in F) o['--' + j] = F[j];
+    return o;
+  }
+  renderVals() {
+    var s = this.state || {};
+    var dark = s.dark != null ? s.dark : !!this.props.dark;
+    var mods = [['CS4473 · Mobile Computing',100],['CS4580 · Adv. Data Structures',88],['MA4160 · Adv. Operational Research',82]].map(function (m) {
+      var near = m[1] < 85;
+      return { name: m[0], pct: m[1] + '%', pctStyle: { fontWeight: 600, color: near ? 'var(--warning)' : 'var(--ink)' }, bar: { display: 'block', width: m[1] + '%', height: '100%', borderRadius: '999px', background: near ? 'var(--lumen)' : 'var(--brand)' } };
+    });
+    var self = this;
+    return { root: Object.assign(this.lu(dark), { width: '390px', height: '844px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', background: 'var(--surface-sunken)', color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '14px', lineHeight: '20px', overflow: 'hidden' }), dark: dark, light: !dark, mods: mods, toggle: function () { self.setState({ dark: !dark }); } };
+  }
+}
+</script>
+</body>
+</html>

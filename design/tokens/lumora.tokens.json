@@ -1,0 +1,134 @@
+{
+  "name": "Lumora",
+  "version": 1,
+  "color": {
+    "themes": [
+      { "id": "light", "name": "Light" },
+      { "id": "dark", "name": "Dark" }
+    ],
+    "tokens": [
+      { "name": "canvas", "value": { "light": "#e8eae6", "dark": "#0d1112" }, "usage": "The area behind PDF pages in the viewer and organize grid. Never put text directly on it except page numbers in `caption` with `ink-muted`." },
+      { "name": "surface", "value": { "light": "#ffffff", "dark": "#161b1c" }, "usage": "App chrome: toolbar, tab bar of the active tab, panels, home screen." },
+      { "name": "surface-sunken", "value": { "light": "#f4f5f2", "dark": "#121718" }, "usage": "Title bar, left sidebar, inactive tabs, hover fill for ghost controls." },
+      { "name": "surface-raised", "value": { "light": "#ffffff", "dark": "#1e2526" }, "usage": "Menus, popovers, dialogs, the floating zoom bar." },
+      { "name": "paper", "value": { "light": "#ffffff", "dark": "#ffffff" }, "usage": "PDF page background and page thumbnails. Stays white in the dark UI theme; only Page dark mode (renderer) changes pages." },
+      { "name": "line", "value": { "light": "#e0e3de", "dark": "#2a3233" }, "usage": "Hairline dividers between toolbar, sidebar and panels; card outlines. Decorative only — never the only border on a control." },
+      { "name": "line-strong", "value": { "light": "#868e89", "dark": "#66726f" }, "usage": "Borders of inputs, secondary buttons and checkboxes (3:1 on surface, surface-sunken, surface-raised in both themes)." },
+      { "name": "ink", "value": { "light": "#141b1c", "dark": "#e7eceb" }, "usage": "Primary text and active icons on surface, surface-sunken, surface-raised, canvas, selected and brand-soft." },
+      { "name": "ink-muted", "value": { "light": "#545f61", "dark": "#9eaaab" }, "usage": "Secondary text, metadata, idle toolbar icons, placeholders — on surface, surface-sunken, surface-raised and selected." },
+      { "name": "brand", "value": { "light": "#0d6767", "dark": "#5cc4bd" }, "usage": "Lumora teal. Primary buttons, active tool group, links, current-page outline. As text on surface, surface-sunken, brand-soft and selected." },
+      { "name": "brand-hover", "value": { "light": "#0a5656", "dark": "#7dd3cd" }, "usage": "Hover and pressed fill of primary buttons." },
+      { "name": "brand-soft", "value": { "light": "#dcefec", "dark": "#13302e" }, "usage": "Tinted background behind brand text: active tool group, info notices." },
+      { "name": "on-brand", "value": { "light": "#ffffff", "dark": "#071615" }, "usage": "Text and icons on a brand or brand-hover fill (primary button label). Never literal white." },
+      { "name": "selected", "value": { "light": "#e3f1ef", "dark": "#163331" }, "usage": "Selected list rows, active toggle icon buttons, selected thumbnails' caption chip." },
+      { "name": "focus", "value": { "light": "#0d6767", "dark": "#6fd0c9" }, "usage": "Keyboard focus ring: 2px solid, 2px offset. At least 5.5:1 on every surface and on canvas in both themes." },
+      { "name": "lumen", "value": { "light": "#e8a13a", "dark": "#f0b45a" }, "usage": "The Lumora glow — brand accent for the New badge, logo moments, onboarding art. A fill only: never text on light surfaces (2.2:1)." },
+      { "name": "lumen-soft", "value": { "light": "#fbeed6", "dark": "#3a2a10" }, "usage": "Tinted background for tips and What's new notices; text on it is ink, with a lead phrase in lumen-ink." },
+      { "name": "lumen-ink", "value": { "light": "#7a4807", "dark": "#f0b45a" }, "usage": "Accent text on lumen-soft and surface: the lead phrase of a tip or What's new message (6.6:1+ both themes)." },
+      { "name": "on-lumen", "value": { "light": "#2a1b05", "dark": "#2a1b05" }, "usage": "Text on a lumen fill (the New badge)." },
+      { "name": "success", "value": { "light": "#1d7346", "dark": "#5fca8e" }, "usage": "Saved, signature valid, OCR done. Always paired with an icon or word. Text on surface and success-soft." },
+      { "name": "success-soft", "value": { "light": "#ddf1e4", "dark": "#11291b" }, "usage": "Background of success notices and badges." },
+      { "name": "warning", "value": { "light": "#8f5400", "dark": "#f0b54a" }, "usage": "Unsaved recovery, form uses JavaScript, large file. Text on surface and warning-soft, with an icon." },
+      { "name": "warning-soft", "value": { "light": "#fcefd6", "dark": "#33240a" }, "usage": "Background of warning notices." },
+      { "name": "danger", "value": { "light": "#b42318", "dark": "#f8806f" }, "usage": "Destructive actions (Delete pages, Apply redaction), errors, invalid signature. Text on surface and danger-soft, with an icon." },
+      { "name": "danger-soft", "value": { "light": "#fde4e1", "dark": "#3a1512" }, "usage": "Background of error notices and danger badges." },
+      { "name": "scrim", "value": { "light": "rgba(10, 14, 15, 0.45)", "dark": "rgba(0, 0, 0, 0.6)" }, "usage": "Overlay behind modal dialogs." },
+      { "name": "text-selection", "value": "rgba(13, 103, 103, 0.28)", "usage": "Text-selection overlay drawn on PDF pages (paper), both themes." },
+      { "name": "search-hit", "value": "rgba(232, 161, 58, 0.40)", "usage": "Find results drawn on PDF pages." },
+      { "name": "search-hit-active", "value": "rgba(232, 161, 58, 0.85)", "usage": "The current find result on a page." },
+      { "name": "hl-yellow", "value": "#ffe45c", "usage": "Highlighter default. Annotation colors are written into the PDF and stay the same in every UI theme; ink on it 13.7:1." },
+      { "name": "hl-green", "value": "#8ee59b", "usage": "Highlighter option." },
+      { "name": "hl-blue", "value": "#8ec9ff", "usage": "Highlighter option." },
+      { "name": "hl-pink", "value": "#ff9ec8", "usage": "Highlighter option." },
+      { "name": "hl-orange", "value": "#ffb86b", "usage": "Highlighter option." },
+      { "name": "hl-purple", "value": "#c9a7ff", "usage": "Highlighter option." },
+      { "name": "pen-black", "value": "#1a1a1a", "usage": "Ink, shapes and text-box default. Written into the PDF." },
+      { "name": "pen-red", "value": "#d92d20", "usage": "Ink, shapes, strike-out and review markup." },
+      { "name": "pen-blue", "value": "#1d4ed8", "usage": "Ink, shapes and form-fill text." },
+      { "name": "pen-green", "value": "#15803d", "usage": "Ink, shapes and approval stamps." }
+    ]
+  },
+  "type": {
+    "fonts": [],
+    "families": {
+      "ui": "\"Segoe UI Variable Text\", \"Segoe UI\", system-ui, -apple-system, \"Helvetica Neue\", Arial, sans-serif",
+      "display": "Newsreader, Georgia, \"Times New Roman\", serif",
+      "mono": "\"Cascadia Mono\", ui-monospace, \"SF Mono\", Consolas, monospace"
+    },
+    "groups": [
+      {
+        "name": "Interface",
+        "family": "ui",
+        "note": "The OS UI face, so Lumora feels native and costs nothing to load. Six steps; 13px is the default.",
+        "styles": [
+          { "name": "title-lg", "fontSize": "20px", "lineHeight": "28px", "fontWeight": 600, "letterSpacing": "-0.01em", "sample": "Merge files", "usage": "Dialog titles and the home screen section titles." },
+          { "name": "title", "fontSize": "15px", "lineHeight": "22px", "fontWeight": 600, "sample": "Comments", "usage": "Panel and sidebar headings." },
+          { "name": "body", "fontSize": "13px", "lineHeight": "20px", "fontWeight": 400, "sample": "Pages 3–7 will be moved to a new file.", "usage": "Default UI text: menus, lists, dialog body, settings." },
+          { "name": "body-strong", "fontSize": "13px", "lineHeight": "20px", "fontWeight": 600, "sample": "Annual report 2026.pdf", "usage": "Emphasis inside body text; file names in lists." },
+          { "name": "label", "fontSize": "12px", "lineHeight": "16px", "fontWeight": 500, "sample": "Annotate", "usage": "Tool-group tabs, document tabs, buttons-sm, form labels." },
+          { "name": "caption", "fontSize": "11px", "lineHeight": "16px", "fontWeight": 400, "sample": "Page 12 of 48", "usage": "Thumbnail page numbers, timestamps, badges, status bar." }
+        ]
+      },
+      {
+        "name": "Brand",
+        "family": "display",
+        "note": "Newsreader (SIL OFL) — a serif drawn for reading on screens. Only for brand moments, never for controls.",
+        "styles": [
+          { "name": "display", "fontSize": "44px", "lineHeight": "48px", "fontWeight": 500, "letterSpacing": "-0.015em", "sample": "Every page, in good light", "usage": "Home screen greeting, onboarding, website hero." },
+          { "name": "headline", "fontSize": "28px", "lineHeight": "34px", "fontWeight": 500, "sample": "Welcome to Lumora PDF", "usage": "Empty states, About dialog, onboarding headers." }
+        ]
+      },
+      {
+        "name": "Code",
+        "family": "mono",
+        "styles": [
+          { "name": "mono", "fontSize": "12px", "lineHeight": "18px", "fontWeight": 400, "sample": "Ctrl+Shift+S", "usage": "Keyboard shortcuts, file sizes, Bates numbers, form field names." }
+        ]
+      }
+    ]
+  },
+  "spacing": {
+    "note": "A 4px grid. Toolbars and lists use space-1 to space-3; panels and dialogs space-4 to space-6.",
+    "tokens": [
+      { "name": "space-1", "value": "4px", "usage": "Icon-to-label gaps inside dense controls; gap between toolbar icon buttons." },
+      { "name": "space-2", "value": "8px", "usage": "Default gap between controls in a row; list row vertical padding." },
+      { "name": "space-3", "value": "12px", "usage": "Button horizontal padding; sidebar item padding." },
+      { "name": "space-4", "value": "16px", "usage": "Panel padding; gap between PDF pages on canvas." },
+      { "name": "space-5", "value": "20px", "usage": "Dialog body padding." },
+      { "name": "space-6", "value": "24px", "usage": "Home screen gutters; space between dialog sections." },
+      { "name": "space-8", "value": "32px", "usage": "Home screen section spacing." },
+      { "name": "space-10", "value": "40px", "usage": "Empty-state and onboarding padding." }
+    ]
+  },
+  "radius": {
+    "tokens": [
+      { "name": "radius-sm", "value": "4px", "usage": "Badges, keyboard keys, color swatches' focus box, checkboxes." },
+      { "name": "radius-md", "value": "6px", "usage": "Buttons, inputs, icon buttons, tabs (top corners), menu items." },
+      { "name": "radius-lg", "value": "10px", "usage": "Dialogs, popovers, menus, cards on the home screen." },
+      { "name": "radius-pill", "value": "999px", "usage": "The floating zoom bar, segmented toggles, color swatches." }
+    ]
+  },
+  "shadow": {
+    "note": "Shadows only lift things that float over the canvas. Chrome is flat and divided by `line`.",
+    "tokens": [
+      { "name": "shadow-page", "value": { "light": "0 1px 2px rgba(16, 24, 26, 0.14), 0 3px 10px rgba(16, 24, 26, 0.08)", "dark": "0 1px 2px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.45)" }, "usage": "PDF pages and page thumbnails on canvas." },
+      { "name": "shadow-popover", "value": { "light": "0 2px 6px rgba(16, 24, 26, 0.10), 0 8px 24px rgba(16, 24, 26, 0.12)", "dark": "0 2px 6px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5)" }, "usage": "Menus, popovers, the floating zoom bar, color pickers." },
+      { "name": "shadow-dialog", "value": { "light": "0 12px 40px rgba(16, 24, 26, 0.22)", "dark": "0 12px 40px rgba(0, 0, 0, 0.7)" }, "usage": "Modal dialogs over the scrim." }
+    ]
+  },
+  "size": {
+    "note": "Fixed sizes of the app frame (desktop). Touch layouts (iPad) scale controls to 44px.",
+    "tokens": [
+      { "name": "titlebar-h", "value": "40px", "usage": "Title bar with document tabs." },
+      { "name": "toolbar-h", "value": "44px", "usage": "Main toolbar with tool groups." },
+      { "name": "subtoolbar-h", "value": "40px", "usage": "Secondary toolbar holding the active group's tools." },
+      { "name": "control-h", "value": "32px", "usage": "Buttons, inputs, icon buttons." },
+      { "name": "control-h-sm", "value": "28px", "usage": "Small buttons in panels and the zoom bar." },
+      { "name": "sidebar-w", "value": "248px", "usage": "Left sidebar default width (resizable 200–400px)." },
+      { "name": "panel-w", "value": "288px", "usage": "Right properties panel width." },
+      { "name": "thumb-w", "value": "120px", "usage": "Page thumbnail width in the sidebar." },
+      { "name": "icon-md", "value": "18px", "usage": "Toolbar icons." },
+      { "name": "icon-sm", "value": "16px", "usage": "Icons in buttons, menus and lists." }
+    ]
+  }
+}

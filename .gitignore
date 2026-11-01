@@ -1,0 +1,30 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env files hold secrets. Only .env.example is committed.
+.env
+.env.*
+!.env.example
+
+# Generated Prisma client
+apps/backend/src/generated/
+
+# Android
+apps/qr-android/.gradle/
+apps/qr-android/build/
+apps/qr-android/app/build/
+apps/qr-android/local.properties
+*.apk
+
+# Python
+__pycache__/
+.venv/
+
+.DS_Store
+Thumbs.db
+.vercel

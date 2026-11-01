@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Projector QR</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/lumora/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="{{root}}">
+  <section style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 24px">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+      <span style="font-family: var(--font-display); font-size: 24px; line-height: 30px; font-weight: 500">CSE <span style="color: var(--ink-muted)">Attendance</span></span>
+      <span class="lu-badge" style="height: 24px; font-size: 12px; font-family: var(--font-mono); font-weight: 500">In22-S7-CS4473 · Mobile Computing</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <sc-if value="{{checkin}}" hint-placeholder-val="{{true}}">
+        <h1 style="margin: 0; font-family: var(--font-display); font-size: 64px; line-height: 68px; font-weight: 500; letter-spacing: -0.02em">Scan to check in</h1>
+        <p style="margin: 0; font-size: 20px; line-height: 28px; color: var(--ink-muted)">Lecture 9 · Sensors · 10:15 – 12:15</p>
+      </sc-if>
+      <sc-if value="{{register}}" hint-placeholder-val="{{false}}">
+        <h1 style="margin: 0; font-family: var(--font-display); font-size: 64px; line-height: 68px; font-weight: 500; letter-spacing: -0.02em">Scan to register</h1>
+        <p style="margin: 0; font-size: 20px; line-height: 28px; color: var(--ink-muted)">Do this once for this module. Then you can check in to every class.</p>
+      </sc-if>
+    </div>
+
+    <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 18px; line-height: 26px">
+      <li style="display: flex; align-items: center; gap: 14px"><span style="width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">1</span>Open CSE Attendance and tap Scan</li>
+      <sc-if value="{{checkin}}" hint-placeholder-val="{{true}}"><li style="display: flex; align-items: center; gap: 14px"><span style="width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">2</span>Point your camera at this code</li></sc-if>
+      <sc-if value="{{register}}" hint-placeholder-val="{{false}}"><li style="display: flex; align-items: center; gap: 14px"><span style="width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">2</span>Type your index number and name as on the class list</li></sc-if>
+      <li style="display: flex; align-items: center; gap: 14px"><span style="width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--brand); color: var(--on-brand); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">3</span>Confirm with your fingerprint or PIN</li>
+    </ol>
+
+    <div style="display: flex; gap: 12px; align-items: stretch">
+      <div style="flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+        <sc-if value="{{checkin}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 15px; font-weight: 600">Checked in</span><span style="font-size: 28px; line-height: 34px; font-weight: 600">38 <span style="font-size: 15px; font-weight: 400; color: var(--ink-muted)">of 42</span></span></div>
+          <span style="height: 8px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; display: block"><span style="display: block; width: 90%; height: 100%; background: var(--brand); border-radius: 999px"></span></span>
+          <span style="display: flex; gap: 8px; flex-wrap: wrap"><span class="lu-badge lu-badge--success">35 on time</span><span class="lu-badge lu-badge--warning">3 late</span><span class="lu-badge lu-badge--danger">2 rejected</span></span>
+        </sc-if>
+        <sc-if value="{{register}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 15px; font-weight: 600">Registered</span><span style="font-size: 28px; line-height: 34px; font-weight: 600">42 <span style="font-size: 15px; font-weight: 400; color: var(--ink-muted)">of 60</span></span></div>
+          <span style="height: 8px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; display: block"><span style="display: block; width: 70%; height: 100%; background: var(--brand); border-radius: 999px"></span></span>
+          <span style="color: var(--ink-muted)">Not on the list? Ask your lecturer to add you.</span>
+        </sc-if>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; justify-content: flex-end">
+        <button type="button" class="lu-btn" onClick="{{toggle}}">Switch theme</button>
+        <a class="lu-btn lu-btn--danger" href="{{backHref}}" style="text-decoration: none; justify-content: center">{{endLabel}}</a>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="QR code" style="flex: none; width: 520px; display: flex; align-items: center; justify-content: center">
+    <div style="width: 500px; background: var(--paper); box-shadow: var(--shadow-page); padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 20px; color: #141b1c">
+      <img src="{{qr}}" alt="{{qrAlt}}" style="width: 420px; height: 420px; display: block">
+      <div style="width: 420px; display: flex; flex-direction: column; gap: 8px">
+        <div style="height: 6px; border-radius: 999px; background: #e0e3de; overflow: hidden"><div style="{{countdown}}"></div></div>
+        <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 600"><span>{{nextLabel}}</span><span style="font-family: &quot;Cascadia Mono&quot;, ui-monospace, monospace; font-weight: 400; color: #545f61">#{{seq}}</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Theme"},"kind":{"editor":"enum","options":["checkin","register"],"default":"checkin"},"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+  lu(dark) {
+    var T = {'canvas':['#e8eae6','#0d1112'],'surface':['#ffffff','#161b1c'],'surface-sunken':['#f4f5f2','#121718'],'line':['#e0e3de','#2a3233'],'line-strong':['#868e89','#66726f'],'ink':['#141b1c','#e7eceb'],'ink-muted':['#545f61','#9eaaab'],'brand':['#0d6767','#5cc4bd'],'brand-hover':['#0a5656','#7dd3cd'],'brand-soft':['#dcefec','#13302e'],'on-brand':['#ffffff','#071615'],'selected':['#e3f1ef','#163331'],'focus':['#0d6767','#6fd0c9'],'success':['#1d7346','#5fca8e'],'success-soft':['#ddf1e4','#11291b'],'warning':['#8f5400','#f0b54a'],'warning-soft':['#fcefd6','#33240a'],'danger':['#b42318','#f8806f'],'danger-soft':['#fde4e1','#3a1512'],'shadow-page':['0 1px 2px rgba(16,24,26,0.14), 0 3px 10px rgba(16,24,26,0.08)','0 1px 2px rgba(0,0,0,0.6), 0 4px 14px rgba(0,0,0,0.45)']};
+    var F = {'paper':'#ffffff','font-ui':'"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif','font-display':'Newsreader, Georgia, "Times New Roman", serif','font-mono':'"Cascadia Mono", ui-monospace, "SF Mono", Consolas, monospace','space-1':'4px','space-2':'8px','space-3':'12px','space-4':'16px','radius-sm':'4px','radius-md':'6px','radius-lg':'10px','radius-pill':'999px','control-h':'32px','control-h-sm':'28px','icon-sm':'16px','icon-md':'18px'};
+    var o = {};
+    for (var k in T) o['--' + k] = T[k][dark ? 1 : 0];
+    for (var j in F) o['--' + j] = F[j];
+    return o;
+  }
+  renderVals() {
+    var s = this.state || {};
+    var dark = s.dark != null ? s.dark : !!this.props.dark;
+    var register = this.props.kind === 'register';
+    var self = this;
+    return {
+      root: Object.assign(this.lu(dark), { width: '1280px', height: '720px', boxSizing: 'border-box', padding: '40px 48px', display: 'flex', gap: '40px', background: 'var(--canvas)', color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: '20px', overflow: 'hidden' }),
+      checkin: !register, register: register,
+      qr: register ? '/_blob/8ac1b38a069618da9f6d7437204b0418' : '/_blob/6eb22fa82dd095d6a5cc7ecdb1fe3ae9',
+      qrAlt: register ? 'Registration QR code for this module' : 'Check-in QR code that changes every 10 seconds',
+      countdown: { width: register ? '40%' : '70%', height: '100%', background: '#0d6767', borderRadius: '999px' },
+      nextLabel: register ? 'New code in 18 s' : 'New code in 7 s',
+      seq: register ? '0031' : '0142',
+      endLabel: register ? 'Close registration' : 'End check-in',
+      backHref: register ? 'PortalStudents.dc.html' : 'Main.dc.html',
+      toggle: function () { self.setState({ dark: !dark }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

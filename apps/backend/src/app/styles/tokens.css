@@ -1,0 +1,139 @@
+/* Lumora design tokens for CSE Attendance.
+   Generated from lumora.tokens.json. Light is the default; dark follows the OS
+   setting unless <html data-theme="light"> or <html data-theme="dark"> is set. */
+
+:root {
+  --text-selection: rgba(13, 103, 103, 0.28);
+  --search-hit: rgba(232, 161, 58, 0.40);
+  --search-hit-active: rgba(232, 161, 58, 0.85);
+  --hl-yellow: #ffe45c;
+  --hl-green: #8ee59b;
+  --hl-blue: #8ec9ff;
+  --hl-pink: #ff9ec8;
+  --hl-orange: #ffb86b;
+  --hl-purple: #c9a7ff;
+  --pen-black: #1a1a1a;
+  --pen-red: #d92d20;
+  --pen-blue: #1d4ed8;
+  --pen-green: #15803d;
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-display: Newsreader, Georgia, "Times New Roman", serif;
+  --font-mono: "Cascadia Mono", ui-monospace, "SF Mono", Consolas, monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+  --titlebar-h: 40px;
+  --toolbar-h: 44px;
+  --subtoolbar-h: 40px;
+  --control-h: 32px;
+  --control-h-sm: 28px;
+  --sidebar-w: 248px;
+  --panel-w: 288px;
+  --thumb-w: 120px;
+  --icon-md: 18px;
+  --icon-sm: 16px;
+  --canvas: #e8eae6;
+  --surface: #ffffff;
+  --surface-sunken: #f4f5f2;
+  --surface-raised: #ffffff;
+  --paper: #ffffff;
+  --line: #e0e3de;
+  --line-strong: #868e89;
+  --ink: #141b1c;
+  --ink-muted: #545f61;
+  --brand: #0d6767;
+  --brand-hover: #0a5656;
+  --brand-soft: #dcefec;
+  --on-brand: #ffffff;
+  --selected: #e3f1ef;
+  --focus: #0d6767;
+  --lumen: #e8a13a;
+  --lumen-soft: #fbeed6;
+  --lumen-ink: #7a4807;
+  --on-lumen: #2a1b05;
+  --success: #1d7346;
+  --success-soft: #ddf1e4;
+  --warning: #8f5400;
+  --warning-soft: #fcefd6;
+  --danger: #b42318;
+  --danger-soft: #fde4e1;
+  --scrim: rgba(10, 14, 15, 0.45);
+  --shadow-page: 0 1px 2px rgba(16, 24, 26, 0.14), 0 3px 10px rgba(16, 24, 26, 0.08);
+  --shadow-popover: 0 2px 6px rgba(16, 24, 26, 0.10), 0 8px 24px rgba(16, 24, 26, 0.12);
+  --shadow-dialog: 0 12px 40px rgba(16, 24, 26, 0.22);
+}
+
+:root[data-theme="dark"] {
+  --canvas: #0d1112;
+  --surface: #161b1c;
+  --surface-sunken: #121718;
+  --surface-raised: #1e2526;
+  --paper: #ffffff;
+  --line: #2a3233;
+  --line-strong: #66726f;
+  --ink: #e7eceb;
+  --ink-muted: #9eaaab;
+  --brand: #5cc4bd;
+  --brand-hover: #7dd3cd;
+  --brand-soft: #13302e;
+  --on-brand: #071615;
+  --selected: #163331;
+  --focus: #6fd0c9;
+  --lumen: #f0b45a;
+  --lumen-soft: #3a2a10;
+  --lumen-ink: #f0b45a;
+  --on-lumen: #2a1b05;
+  --success: #5fca8e;
+  --success-soft: #11291b;
+  --warning: #f0b54a;
+  --warning-soft: #33240a;
+  --danger: #f8806f;
+  --danger-soft: #3a1512;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow-page: 0 1px 2px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-popover: 0 2px 6px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-dialog: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #0d1112;
+    --surface: #161b1c;
+    --surface-sunken: #121718;
+    --surface-raised: #1e2526;
+    --paper: #ffffff;
+    --line: #2a3233;
+    --line-strong: #66726f;
+    --ink: #e7eceb;
+    --ink-muted: #9eaaab;
+    --brand: #5cc4bd;
+    --brand-hover: #7dd3cd;
+    --brand-soft: #13302e;
+    --on-brand: #071615;
+    --selected: #163331;
+    --focus: #6fd0c9;
+    --lumen: #f0b45a;
+    --lumen-soft: #3a2a10;
+    --lumen-ink: #f0b45a;
+    --on-lumen: #2a1b05;
+    --success: #5fca8e;
+    --success-soft: #11291b;
+    --warning: #f0b54a;
+    --warning-soft: #33240a;
+    --danger: #f8806f;
+    --danger-soft: #3a1512;
+    --scrim: rgba(0, 0, 0, 0.6);
+    --shadow-page: 0 1px 2px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.45);
+    --shadow-popover: 0 2px 6px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-dialog: 0 12px 40px rgba(0, 0, 0, 0.7);
+  }
+}

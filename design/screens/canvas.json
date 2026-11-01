@@ -1,0 +1,67 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-01T16:00:00Z"},
+  "title": "QR Attendance Designs v2 (Lumora)",
+  "launch": {"view": "canvas", "page": "portal"},
+  "pages": [
+    {"id": "portal", "name": "Lecturer portal"},
+    {"id": "app", "name": "Student app"}
+  ],
+  "boards": {
+    "PortalLogin.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 900, "title": "Login · light", "page": "portal", "expand": "fill", "is_interactive": true},
+    "Main.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 1100, "title": "Dashboard · light", "page": "portal", "expand": "fill", "is_interactive": true},
+    "PortalModules.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 1000, "title": "Modules · light", "page": "portal", "expand": "fill", "is_interactive": true},
+    "PortalStudents.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 1100, "title": "Module students · light", "page": "portal", "expand": "fill", "is_interactive": true},
+    "PortalCsvImport.dc.html": {"x": 6080, "y": 0, "w": 1440, "h": 1100, "title": "CSV import · light", "page": "portal", "expand": "fill", "is_interactive": true},
+    "PortalSessions.dc.html": {"x": 7600, "y": 0, "w": 1440, "h": 1100, "title": "Sessions · light", "page": "portal", "expand": "fill", "is_interactive": true},
+    "PortalAttendance.dc.html": {"x": 9120, "y": 0, "w": 1440, "h": 1150, "title": "Attendance · light", "page": "portal", "expand": "fill", "is_interactive": true},
+    "Projector.dc.html": {"x": 10640, "y": 0, "w": 1280, "h": 720, "title": "Projector · check-in QR · light", "page": "portal", "is_interactive": true},
+    "ProjectorRegister.dc.html": {"x": 12000, "y": 0, "w": 1280, "h": 720, "title": "Projector · registration QR · light", "page": "portal"},
+
+    "PortalLoginDark.dc.html": {"x": 0, "y": 1520, "w": 1440, "h": 900, "title": "Login · dark", "page": "portal", "expand": "fill"},
+    "MainDark.dc.html": {"x": 1520, "y": 1520, "w": 1440, "h": 1100, "title": "Dashboard · dark", "page": "portal", "expand": "fill"},
+    "PortalModulesDark.dc.html": {"x": 3040, "y": 1520, "w": 1440, "h": 1000, "title": "Modules · dark", "page": "portal", "expand": "fill"},
+    "PortalStudentsDark.dc.html": {"x": 4560, "y": 1520, "w": 1440, "h": 1100, "title": "Module students · dark", "page": "portal", "expand": "fill"},
+    "PortalCsvImportDark.dc.html": {"x": 6080, "y": 1520, "w": 1440, "h": 1100, "title": "CSV import · dark", "page": "portal", "expand": "fill"},
+    "PortalSessionsDark.dc.html": {"x": 7600, "y": 1520, "w": 1440, "h": 1100, "title": "Sessions · dark", "page": "portal", "expand": "fill"},
+    "PortalAttendanceDark.dc.html": {"x": 9120, "y": 1520, "w": 1440, "h": 1150, "title": "Attendance · dark", "page": "portal", "expand": "fill"},
+    "ProjectorDark.dc.html": {"x": 10640, "y": 1520, "w": 1280, "h": 720, "title": "Projector · check-in QR · dark", "page": "portal"},
+    "ProjectorRegisterDark.dc.html": {"x": 12000, "y": 1520, "w": 1280, "h": 720, "title": "Projector · registration QR · dark", "page": "portal"},
+
+    "Sidebar.dc.html": {"x": 0, "y": 3040, "w": 248, "h": 900, "title": "Shared · sidebar", "page": "portal"},
+    "Topbar.dc.html": {"x": 328, "y": 3040, "w": 1192, "h": 44, "title": "Shared · top bar", "page": "portal", "is_interactive": true},
+
+    "AppWelcome.dc.html": {"x": 0, "y": 0, "w": 390, "h": 844, "title": "Welcome / setup · light", "page": "app", "is_interactive": true},
+    "AppRegister.dc.html": {"x": 470, "y": 0, "w": 390, "h": 844, "title": "Register for module · light", "page": "app", "is_interactive": true},
+    "AppHome.dc.html": {"x": 940, "y": 0, "w": 390, "h": 844, "title": "Home · light", "page": "app", "is_interactive": true},
+    "AppModule.dc.html": {"x": 1410, "y": 0, "w": 390, "h": 844, "title": "Module detail · light", "page": "app", "is_interactive": true},
+    "AppScanner.dc.html": {"x": 1880, "y": 0, "w": 390, "h": 844, "title": "Scanner · light", "page": "app", "is_interactive": true},
+    "AppResult.dc.html": {"x": 2350, "y": 0, "w": 390, "h": 844, "title": "Check-in result · light", "page": "app", "is_interactive": true},
+    "AppSettings.dc.html": {"x": 2820, "y": 0, "w": 390, "h": 844, "title": "Experiment settings · light", "page": "app", "is_interactive": true},
+
+    "AppWelcomeDark.dc.html": {"x": 0, "y": 1300, "w": 390, "h": 844, "title": "Welcome / setup · dark", "page": "app"},
+    "AppRegisterDark.dc.html": {"x": 470, "y": 1300, "w": 390, "h": 844, "title": "Register for module · dark", "page": "app"},
+    "AppHomeDark.dc.html": {"x": 940, "y": 1300, "w": 390, "h": 844, "title": "Home · dark", "page": "app"},
+    "AppModuleDark.dc.html": {"x": 1410, "y": 1300, "w": 390, "h": 844, "title": "Module detail · dark", "page": "app"},
+    "AppScannerDark.dc.html": {"x": 1880, "y": 1300, "w": 390, "h": 844, "title": "Scanner · dark", "page": "app"},
+    "AppResultDark.dc.html": {"x": 2350, "y": 1300, "w": 390, "h": 844, "title": "Check-in result · dark", "page": "app"},
+    "AppSettingsDark.dc.html": {"x": 2820, "y": 1300, "w": 390, "h": 844, "title": "Experiment settings · dark", "page": "app"}
+  },
+  "order": [
+    "Main.dc.html", "PortalLogin.dc.html", "PortalModules.dc.html", "PortalStudents.dc.html", "PortalCsvImport.dc.html", "PortalSessions.dc.html", "PortalAttendance.dc.html", "Projector.dc.html", "ProjectorRegister.dc.html",
+    "PortalLoginDark.dc.html", "MainDark.dc.html", "PortalModulesDark.dc.html", "PortalStudentsDark.dc.html", "PortalCsvImportDark.dc.html", "PortalSessionsDark.dc.html", "PortalAttendanceDark.dc.html", "ProjectorDark.dc.html", "ProjectorRegisterDark.dc.html",
+    "Sidebar.dc.html", "Topbar.dc.html",
+    "AppWelcome.dc.html", "AppRegister.dc.html", "AppHome.dc.html", "AppModule.dc.html", "AppScanner.dc.html", "AppResult.dc.html", "AppSettings.dc.html",
+    "AppWelcomeDark.dc.html", "AppRegisterDark.dc.html", "AppHomeDark.dc.html", "AppModuleDark.dc.html", "AppScannerDark.dc.html", "AppResultDark.dc.html", "AppSettingsDark.dc.html"
+  ],
+  "notes": {
+    "portalLight": {"x": 0, "y": -320, "text": "Lecturer portal · Light theme", "kind": "title1", "maxW": 13280, "page": "portal"},
+    "portalDark": {"x": 0, "y": 1200, "text": "Lecturer portal · Dark theme", "kind": "title1", "maxW": 13280, "page": "portal"},
+    "portalShared": {"x": 0, "y": 2760, "text": "Shared parts used by every portal page", "kind": "title1", "maxW": 3000, "page": "portal"},
+    "appLight": {"x": 0, "y": -320, "text": "Student app (Kotlin) · Light theme", "kind": "title1", "maxW": 3210, "page": "app"},
+    "appDark": {"x": 0, "y": 1000, "text": "Student app (Kotlin) · Dark theme", "kind": "title1", "maxW": 3210, "page": "app"}
+  },
+  "designSystems": [
+    {"title": "Lumora", "namespace": "lumora", "artifact": "https://claude.ai/artifact/F4wLwZBj672SEQdBZkXR2P", "version": "1791564689-793b", "copiedAt": "2026-11-01T16:30:00Z"}
+  ]
+}

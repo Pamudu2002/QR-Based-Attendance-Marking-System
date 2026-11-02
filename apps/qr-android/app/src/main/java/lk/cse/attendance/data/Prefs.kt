@@ -12,9 +12,9 @@ import lk.cse.attendance.BuildConfig
 class Prefs(context: Context) {
     private val sp = context.getSharedPreferences("cse_attendance", Context.MODE_PRIVATE)
 
-    var serverUrl: String
-        get() = sp.getString(KEY_SERVER, null) ?: BuildConfig.SERVER_URL
-        set(value) = sp.edit { putString(KEY_SERVER, value.trim().trimEnd('/')) }
+    /** Fixed at build time (BuildConfig.SERVER_URL); a server saved by an older version is ignored. */
+    val serverUrl: String
+        get() = BuildConfig.SERVER_URL
 
     var deviceId: String?
         get() = sp.getString(KEY_DEVICE, null)
@@ -85,7 +85,6 @@ class Prefs(context: Context) {
     }
 
     private companion object {
-        const val KEY_SERVER = "serverUrl"
         const val KEY_DEVICE = "deviceId"
         const val KEY_REFRESH = "refreshToken"
         const val KEY_UNLOCK = "keyUnlock"

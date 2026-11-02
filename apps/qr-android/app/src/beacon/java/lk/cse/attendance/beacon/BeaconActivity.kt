@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bluetooth
@@ -46,7 +45,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -65,12 +63,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import kotlinx.coroutines.launch
-import lk.cse.attendance.BuildConfig
 import lk.cse.attendance.data.ApiException
 import lk.cse.attendance.scan.QrAnalyzer
 import lk.cse.attendance.ui.BrandName
@@ -83,7 +79,6 @@ import lk.cse.attendance.ui.StatusBadge
 import lk.cse.attendance.ui.Tone
 import lk.cse.attendance.ui.theme.CseAttendanceTheme
 import lk.cse.attendance.ui.theme.Lumora
-import lk.cse.attendance.ui.theme.MonoText
 
 /** CSE Attendance Beacon: link once, then leave it open on the desk (PLAN §6.5). */
 class BeaconActivity : ComponentActivity() {
@@ -127,8 +122,6 @@ private fun LinkScreen(app: BeaconApp, onLinked: () -> Unit) {
     var scanning by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var server by remember { mutableStateOf(app.prefs.serverUrl) }
-    var editServer by remember { mutableStateOf(false) }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         camera = it
@@ -217,16 +210,8 @@ private fun LinkScreen(app: BeaconApp, onLinked: () -> Unit) {
             icon = Icons.Outlined.QrCodeScanner,
             busy = busy,
         )
-        ServerRow(server, enabled = !busy, onChange = { editServer = true })
     }
 
-    if (editServer) {
-        ServerDialog(server, onDismiss = { editServer = false }, onSave = {
-            app.prefs.serverUrl = it
-            server = app.prefs.serverUrl
-            editServer = false
-        })
-    }
 }
 
 /** Camera scan for the link code, with the same decoder as the student app. */
@@ -262,8 +247,6 @@ private fun MainScreen(app: BeaconApp, onUnlinked: () -> Unit) {
     val ui by BeaconService.ui.collectAsState()
     var onDuty by remember { mutableStateOf(app.prefs.onDuty) }
     var power by remember { mutableStateOf(app.prefs.power) }
-    var server by remember { mutableStateOf(app.prefs.serverUrl) }
-    var editServer by remember { mutableStateOf(false) }
     var confirmUnlink by remember { mutableStateOf(false) }
     val nearbyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {}
 
@@ -349,17 +332,9 @@ private fun MainScreen(app: BeaconApp, onUnlinked: () -> Unit) {
         }
 
         Notice(Tone.Tip, "keep this phone on a charger during class, with Bluetooth on. You can lock the screen.", lead = "Tip:")
-        ServerRow(server, enabled = true, onChange = { editServer = true })
         SecondaryButton("Unlink this phone", onClick = { confirmUnlink = true }, danger = true, modifier = Modifier.fillMaxWidth())
     }
 
-    if (editServer) {
-        ServerDialog(server, onDismiss = { editServer = false }, onSave = {
-            app.prefs.serverUrl = it
-            server = app.prefs.serverUrl
-            editServer = false
-        })
-    }
     if (confirmUnlink) {
         AlertDialog(
             onDismissRequest = { confirmUnlink = false },
@@ -425,40 +400,4 @@ private fun PermissionRow(icon: ImageVector, title: String, subtitle: String, do
         }
         if (done) StatusBadge("Allowed", Tone.Success, Icons.Outlined.Check) else action()
     }
-}
-
-@Composable
-private fun ServerRow(server: String, enabled: Boolean, onChange: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text("Server", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted)
-            Text(server, style = MonoText, color = Lumora.colors.inkMuted)
-        }
-        TextButton(onClick = onChange, enabled = enabled) { Text("Change") }
-    }
-}
-
-@Composable
-private fun ServerDialog(current: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    var draft by remember { mutableStateOf(current) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Change server") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("For testing on a laptop, use http://<laptop IP>:3000 on the same Wi-Fi.", style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
-                OutlinedTextField(
-                    value = draft,
-                    onValueChange = { draft = it },
-                    singleLine = true,
-                    textStyle = MonoText,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                TextButton(onClick = { draft = BuildConfig.SERVER_URL }) { Text("Use default") }
-            }
-        },
-        confirmButton = { TextButton(onClick = { onSave(draft) }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
 }

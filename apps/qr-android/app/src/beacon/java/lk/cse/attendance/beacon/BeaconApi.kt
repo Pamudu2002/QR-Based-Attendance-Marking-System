@@ -25,9 +25,9 @@ import lk.cse.attendance.data.ErrorBody
 class BeaconPrefs(context: Context) {
     private val sp = context.getSharedPreferences("cse_attendance_beacon", Context.MODE_PRIVATE)
 
-    var serverUrl: String
-        get() = sp.getString("serverUrl", null) ?: BuildConfig.SERVER_URL
-        set(value) = sp.edit { putString("serverUrl", value.trim().trimEnd('/')) }
+    /** Fixed at build time (BuildConfig.SERVER_URL). */
+    val serverUrl: String
+        get() = BuildConfig.SERVER_URL
 
     var beaconId: String?
         get() = sp.getString("beaconId", null)

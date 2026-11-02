@@ -25,7 +25,7 @@ adb install -r app/build/outputs/apk/beacon/debug/app-beacon-debug.apk     # on 
 
 ## Server
 
-The default is `BuildConfig.SERVER_URL` (the Vercel deployment). Change it on the setup screen or in **Settings → Server** (student), or on the beacon app's screen. Debug builds also allow plain `http`, so a phone on the same Wi-Fi can use the laptop: run `pnpm dev -- -H 0.0.0.0` in `apps/backend` and enter `http://<laptop IP>:3000`.
+Both apps use `BuildConfig.SERVER_URL` (`https://qr-based-attendance-marking-system.vercel.app`, set in `app/build.gradle.kts`). It's fixed: there's no setting to change it. To test against a laptop instead, change that field to `http://<laptop IP>:3000` and rebuild (debug builds allow plain `http`); run `pnpm dev -- -H 0.0.0.0` in `apps/backend`.
 
 ## How it works
 

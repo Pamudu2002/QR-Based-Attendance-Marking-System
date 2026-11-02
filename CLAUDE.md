@@ -70,7 +70,7 @@ The UI follows the Lumora design system. Read `design/README.md` before building
 - Camera: `ImageAnalysis`, fixed 1280×720, `STRATEGY_KEEP_ONLY_LATEST`, `YUV_420_888`. Count processed and dropped frames.
 - Keystore: EC P-256, `SHA256withECDSA`, DER signatures. Public key as X.509 SPKI DER, base64 in JSON. StrongBox when available, else TEE.
 - Signed messages: `"QRv1-LOGIN" | deviceId | nonce`, `"QRv1-REG" | token | deviceId | indexNumber`, `"QRv1-CHK" | token | deviceId | attemptId`.
-- The server URL is a `BuildConfig` field, editable in the settings screen.
+- The server URL is the `BuildConfig.SERVER_URL` field (`https://qr-based-attendance-marking-system.vercel.app`), fixed at build time. The apps have no setting to change it.
 
 ### Backend (`apps/backend`)
 - Route handlers use the existing `handler` wrapper and `ApiError` from `src/lib/http.ts`. Validate every body with zod.

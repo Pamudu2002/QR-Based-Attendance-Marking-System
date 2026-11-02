@@ -204,7 +204,7 @@ Runtime prompts are handled on first launch. **Minimum SDK 23 (Android 6.0)**, t
 - Gradle project in `apps/qr-android` with two product flavours from one codebase: `student` (`lk.cse.attendance`) and `beacon` (`lk.cse.attendance.beacon`). Shared code is in `src/main`; each flavour has its own manifest in `src/student` / `src/beacon`, and the beacon app's code is in `src/beacon`.
 - `./gradlew assembleDebug` builds both: `app/build/outputs/apk/student/debug/app-student-debug.apk` and `app/build/outputs/apk/beacon/debug/app-beacon-debug.apk`. Unit tests: `./gradlew testStudentDebugUnitTest testBeaconDebugUnitTest`.
 - A GitHub Actions job builds a debug-signed APK, which can be downloaded from the workflow run.
-- The server URL is a `BuildConfig` field, also editable in settings.
+- The server URL is a `BuildConfig` field (`https://qr-based-attendance-marking-system.vercel.app`), fixed at build time: neither app lets users change it. To test against a laptop, change the field and rebuild.
 
 ### 5.5 Beacon app (lecturer's phone)
 1. **Link:** permissions (camera, Nearby devices, notifications), then scan the link code from the portal. The app creates its own EC P-256 Keystore key **without user authentication** (it runs unattended) and sends the public key with the code.

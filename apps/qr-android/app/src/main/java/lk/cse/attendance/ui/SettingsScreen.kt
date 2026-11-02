@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -19,7 +18,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -32,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import lk.cse.attendance.BuildConfig
 import lk.cse.attendance.MainActivity
@@ -44,8 +41,6 @@ import lk.cse.attendance.ui.theme.MonoText
 @Composable
 fun SettingsScreen(session: Session, activity: MainActivity, onBack: () -> Unit, onLog: () -> Unit, onSetUpAgain: () -> Unit) {
     val prefs = session.prefs
-    var server by remember { mutableStateOf(prefs.serverUrl) }
-    var saved by remember { mutableStateOf(false) }
     var confirmReset by remember { mutableStateOf(false) }
 
     Column(
@@ -78,23 +73,6 @@ fun SettingsScreen(session: Session, activity: MainActivity, onBack: () -> Unit,
         }
 
         LuCard {
-            Text("Server", style = MaterialTheme.typography.titleSmall)
-            OutlinedTextField(
-                value = server,
-                onValueChange = { server = it; saved = false },
-                singleLine = true,
-                textStyle = MonoText,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                SecondaryButton("Save", onClick = { prefs.serverUrl = server; server = prefs.serverUrl; saved = true })
-                TextButton(onClick = { server = BuildConfig.SERVER_URL; prefs.serverUrl = server; saved = true }) { Text("Use default") }
-            }
-            if (saved) Text("Saved. A phone set up on another server must be set up again.", style = MaterialTheme.typography.bodySmall, color = Lumora.colors.inkMuted)
-        }
-
-        LuCard {
             Text("This phone", style = MaterialTheme.typography.titleSmall)
             InfoRow("Device", session.deviceId ?: "Not set up")
             InfoRow("Key", prefs.keyLevel ?: "–")
@@ -108,6 +86,7 @@ fun SettingsScreen(session: Session, activity: MainActivity, onBack: () -> Unit,
             InfoRow("Android", "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
             InfoRow("Model", "${Build.MANUFACTURER} ${Build.MODEL}")
             InfoRow("App", BuildConfig.VERSION_NAME)
+            InfoRow("Server", BuildConfig.SERVER_URL.removePrefix("https://"))
         }
 
         SecondaryButton("Attempt log", onClick = onLog, modifier = Modifier.fillMaxWidth())

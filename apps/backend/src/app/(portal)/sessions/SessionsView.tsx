@@ -253,6 +253,9 @@ export function SessionsView(props: SessionsViewProps) {
             opens at {formatTime(new Date(new Date(todayFirst.startsAt).getTime() - todayFirst.opensBeforeMin * 60_000))},{" "}
             {todayFirst.opensBeforeMin} minutes before the class.
           </span>
+          <Link className="lu-btn lu-btn--sm" href={`/sessions/${todayFirst.id}`}>
+            Open session
+          </Link>
         </div>
       )}
 
@@ -334,9 +337,16 @@ export function SessionsView(props: SessionsViewProps) {
 
         <div className={s.splitSide}>
           <form aria-labelledby="add-title" className={`${s.card} ${s.cardPad}`} onSubmit={submit} noValidate>
-            <h2 id="add-title" className={s.h2}>
-              {editing ? "Edit session" : "Add session"}
-            </h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <h2 id="add-title" className={s.h2}>
+                {editing ? "Edit session" : "Add session"}
+              </h2>
+              {editing && (
+                <Link className="lu-btn lu-btn--sm" href={`/sessions/${editing.id}`}>
+                  Open session
+                </Link>
+              )}
+            </div>
             <FormError message={error} />
             {notice && (
               <div className="lu-notice lu-notice--success" role="status" style={{ maxWidth: "none" }}>
@@ -465,7 +475,9 @@ export function SessionsView(props: SessionsViewProps) {
                     </span>
                   </span>
                   {isToday ? (
-                    <span className="lu-badge lu-badge--brand">Today</span>
+                    <Link className="lu-btn lu-btn--sm" href={`/sessions/${x.id}`}>
+                      Open
+                    </Link>
                   ) : (
                     <button
                       type="button"

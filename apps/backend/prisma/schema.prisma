@@ -260,6 +260,8 @@ enum AttemptVerdict {
   DUPLICATE
   NO_DECODE
   CANCELLED
+  /// The phone sent the check-in but got no reply (logged by the phone)
+  NETWORK_ERROR
 }
 
 model Attempt {
@@ -278,6 +280,8 @@ model Attempt {
   attemptNo       Int?
 
   // Client timings (SystemClock.elapsedRealtimeNanos, converted to ms)
+  /// Scan pressed → first camera frame at the analyzer
+  firstFrameMs    Float?
   decodeMs        Float?
   framesProcessed Int?
   framesDropped   Int?
@@ -304,4 +308,5 @@ model Attempt {
   student Student?       @relation(fields: [studentId], references: [id], onDelete: SetNull)
 
   @@index([windowId])
+  @@index([deviceId])
 }

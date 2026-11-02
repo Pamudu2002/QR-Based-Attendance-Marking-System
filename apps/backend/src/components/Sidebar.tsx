@@ -40,7 +40,7 @@ export function Sidebar({ lecturer, moduleCount, today }: Props) {
             <span className={s.muted}>
               {today.module.code} {today.title} · {today.venue}
             </span>
-            <Link className={`lu-btn lu-btn--sm ${s.full}`} href={`/modules/${today.moduleId}/sessions`}>
+            <Link className={`lu-btn lu-btn--sm ${s.full}`} href={`/sessions/${today.id}`}>
               Open session
             </Link>
             <span className="sr-only">{moduleShortName(today.module)}</span>

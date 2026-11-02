@@ -28,3 +28,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .vercel
+
+# Phone simulator keys (apps/backend/scripts/sim-phone.ts)
+.sim-phone-*.json

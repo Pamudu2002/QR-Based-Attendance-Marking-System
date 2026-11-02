@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A plain QR-style mark on the brand teal. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M34,34h16v16h-16z M58,34h16v16h-16z M34,58h16v16h-16z M60,60h6v6h-6z M68,68h6v6h-6z M68,58h6v6h-6z M58,68h6v6h-6z" />
+    <path android:fillColor="#0D6767"
+        android:pathData="M38,38h8v8h-8z M62,38h8v8h-8z M38,62h8v8h-8z" />
+</vector>

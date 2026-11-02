@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Book, Calendar, LayoutDashboard } from "lucide-react";
+import { Book, Calendar, FlaskConical, LayoutDashboard } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { ico } from "./icon";
 
 export function SidebarNav({ moduleCount }: { moduleCount: number }) {
   const path = usePathname();
   const item = (active: boolean) => `${s.navItem} ${active ? s.navItemActive : ""}`;
-  const isSessions = path === "/sessions" || /^\/modules\/[^/]+\/sessions/.test(path);
+  const isSessions = path.startsWith("/sessions") || /^\/modules\/[^/]+\/sessions/.test(path);
 
   return (
     <nav aria-label="Main menu" style={{ display: "contents" }}>
@@ -26,6 +26,11 @@ export function SidebarNav({ moduleCount }: { moduleCount: number }) {
       <Link href="/sessions" className={item(isSessions)}>
         <Calendar {...ico} />
         Sessions
+      </Link>
+      <span className={s.navHeading}>Tools</span>
+      <Link href="/experiment" className={item(path.startsWith("/experiment"))}>
+        <FlaskConical {...ico} />
+        Experiment
       </Link>
     </nav>
   );

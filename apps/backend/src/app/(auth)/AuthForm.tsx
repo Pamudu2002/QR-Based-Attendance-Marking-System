@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Info } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { Field, FormError } from "@/components/Field";
@@ -15,6 +15,10 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[] | undefined>>({});
+  // The form only works once the page's script has loaded. Until then the
+  // button stays disabled, so the browser can't submit the form on its own.
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,7 +50,8 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
   const otherHref = (path: string) => (next ? `${path}?next=${encodeURIComponent(next)}` : path);
 
   return (
-    <form aria-labelledby="auth-title" className={s.authForm} onSubmit={submit} noValidate>
+    // method="post": even a native submit never puts the password in the URL.
+    <form aria-labelledby="auth-title" className={s.authForm} onSubmit={submit} method="post" noValidate>
       <div>
         <h2 id="auth-title" className={s.h1}>
           {mode === "login" ? "Log in to CSE Attendance" : "Create a lecturer account"}
@@ -84,7 +89,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
         <input type="checkbox" name="keep" defaultChecked />
         Keep me logged in
       </label>
-      <button type="submit" className={`lu-btn lu-btn--primary ${s.full}`} disabled={busy}>
+      <button type="submit" className={`lu-btn lu-btn--primary ${s.full}`} disabled={busy || !ready}>
         {mode === "login" ? (busy ? "Logging in…" : "Log in") : busy ? "Creating account…" : "Create account"}
       </button>
       <p className={s.muted} style={{ margin: 0, textAlign: "center" }}>

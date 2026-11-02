@@ -21,7 +21,6 @@ export type SessionItem = {
   venue: string;
   opensBeforeMin: number;
   lateAfterMin: number;
-  expectedSsid: string | null;
   isExperiment: boolean;
 };
 
@@ -62,7 +61,6 @@ type FormState = {
   weeks: number;
   opensBeforeMin: number;
   lateAfterMin: number;
-  expectedSsid: string;
   isExperiment: boolean;
 };
 
@@ -78,7 +76,6 @@ function emptyForm(moduleId: string, today: string): FormState {
     weeks: 4,
     opensBeforeMin: 15,
     lateAfterMin: 15,
-    expectedSsid: "",
     isExperiment: false,
   };
 }
@@ -96,7 +93,6 @@ function formFrom(x: SessionItem): FormState {
     weeks: 1,
     opensBeforeMin: x.opensBeforeMin,
     lateAfterMin: x.lateAfterMin,
-    expectedSsid: x.expectedSsid ?? "",
     isExperiment: x.isExperiment,
   };
 }
@@ -169,7 +165,6 @@ export function SessionsView(props: SessionsViewProps) {
       venue: f.venue,
       opensBeforeMin: Number(f.opensBeforeMin),
       lateAfterMin: Number(f.lateAfterMin),
-      expectedSsid: f.expectedSsid || null,
       isExperiment: f.isExperiment,
     };
     setBusy(true);
@@ -253,6 +248,9 @@ export function SessionsView(props: SessionsViewProps) {
             opens at {formatTime(new Date(new Date(todayFirst.startsAt).getTime() - todayFirst.opensBeforeMin * 60_000))},{" "}
             {todayFirst.opensBeforeMin} minutes before the class.
           </span>
+          <Link className="lu-btn lu-btn--sm" href={`/sessions/${todayFirst.id}`}>
+            Open session
+          </Link>
         </div>
       )}
 
@@ -334,9 +332,16 @@ export function SessionsView(props: SessionsViewProps) {
 
         <div className={s.splitSide}>
           <form aria-labelledby="add-title" className={`${s.card} ${s.cardPad}`} onSubmit={submit} noValidate>
-            <h2 id="add-title" className={s.h2}>
-              {editing ? "Edit session" : "Add session"}
-            </h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <h2 id="add-title" className={s.h2}>
+                {editing ? "Edit session" : "Add session"}
+              </h2>
+              {editing && (
+                <Link className="lu-btn lu-btn--sm" href={`/sessions/${editing.id}`}>
+                  Open session
+                </Link>
+              )}
+            </div>
             <FormError message={error} />
             {notice && (
               <div className="lu-notice lu-notice--success" role="status" style={{ maxWidth: "none" }}>
@@ -405,13 +410,6 @@ export function SessionsView(props: SessionsViewProps) {
               <div className={s.form} style={{ marginTop: 8 }}>
                 <p style={{ margin: 0 }}>
                   Opens {f.opensBeforeMin} min before the start · late after {f.lateAfterMin} min
-                  {f.expectedSsid ? (
-                    <>
-                      {" "}· Wi-Fi name <span className={s.mono} style={{ color: "var(--ink)" }}>{f.expectedSsid}</span>
-                    </>
-                  ) : (
-                    " · Wi-Fi not checked"
-                  )}
                 </p>
                 <div className={s.grid2}>
                   <Field label="Opens before (min)">
@@ -421,9 +419,6 @@ export function SessionsView(props: SessionsViewProps) {
                     <input className="lu-input" type="number" min={0} max={240} value={f.lateAfterMin} onChange={(e) => set("lateAfterMin", Number(e.target.value))} />
                   </Field>
                 </div>
-                <Field label="Wi-Fi name (optional)" hint="Students must be on this network to check in.">
-                  <input className="lu-input" value={f.expectedSsid} onChange={(e) => set("expectedSsid", e.target.value)} placeholder="UniWiFi" />
-                </Field>
                 <label className="lu-check">
                   <input type="checkbox" checked={f.isExperiment} onChange={(e) => set("isExperiment", e.target.checked)} />
                   Experiment session (not counted in attendance %)
@@ -465,7 +460,9 @@ export function SessionsView(props: SessionsViewProps) {
                     </span>
                   </span>
                   {isToday ? (
-                    <span className="lu-badge lu-badge--brand">Today</span>
+                    <Link className="lu-btn lu-btn--sm" href={`/sessions/${x.id}`}>
+                      Open
+                    </Link>
                   ) : (
                     <button
                       type="button"

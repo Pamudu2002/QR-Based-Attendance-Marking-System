@@ -9,7 +9,8 @@ export const REFRESH_COOKIE_PATH = "/api/v1/auth";
 export const ACCESS_TTL_SEC = 15 * 60;
 export const REFRESH_TTL_SEC = 30 * 24 * 60 * 60;
 
-export type AccessClaims = { sub: string; typ: "lecturer" | "device" };
+/** lecturer: portal · device: student app · beacon: CSE Attendance Beacon (a lecturer's phone) */
+export type AccessClaims = { sub: string; typ: "lecturer" | "device" | "beacon" };
 
 function secret() {
   const raw = process.env.JWT_SECRET;
@@ -31,7 +32,7 @@ export async function verifyAccessToken(token: string | undefined): Promise<Acce
   try {
     const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
     if (typeof payload.sub !== "string") return null;
-    if (payload.typ !== "lecturer" && payload.typ !== "device") return null;
+    if (payload.typ !== "lecturer" && payload.typ !== "device" && payload.typ !== "beacon") return null;
     return { sub: payload.sub, typ: payload.typ };
   } catch {
     return null;

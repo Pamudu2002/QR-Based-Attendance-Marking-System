@@ -43,12 +43,13 @@ The **experiment** runs on top of this system.
 4. **Open registration** and show the module's **registration QR** on the projector in the first class.
 5. **Watch registrations come in**: the roster shows each student as **Registered** or **Not registered yet**.
 6. **Add sessions** (the real classes). Each has a title, date, start and end time, and venue. A session can repeat weekly for N weeks.
-7. **Start check-in** in class. The projector shows the **rotating check-in QR**, and a live counter shows who has checked in.
-8. **View attendance** in three ways:
+7. **Link a beacon phone** (once): install **CSE Attendance Beacon** on an Android phone and scan the link code from **Beacon phones** in the portal.
+8. **Start check-in** in class. The projector shows the **rotating check-in QR**, and a live counter shows who has checked in. The beacon phone on the desk starts broadcasting by itself and stops at **End check-in** (§6.5).
+9. **View attendance** in three ways:
    - per session (present, late or absent among registered students);
    - per module, as a matrix with each student's % and the **80% line**;
    - as a CSV export.
-9. **Manual fixes:**
+10. **Manual fixes:**
    - mark a student *excused* or *present* with a reason (logged);
    - **reset a student's device** when they get a new phone.
 
@@ -56,7 +57,7 @@ The **experiment** runs on top of this system.
 1. **Install and open the app.** It creates a hardware key, which needs a fingerprint or PIN.
 2. In the first class, **scan the module's registration QR** and enter the **same name and index number** the lecturer used. The student is now registered for that module.
 3. **Other modules:** scan each module's registration QR. The app already knows who the student is, so it only asks them to confirm. A student can be registered in **many modules**.
-4. **In each class**, tap **Scan**, aim at the projector, confirm with fingerprint or PIN, and see *Present* or *Late*.
+4. **In each class**, with Bluetooth on, tap **Scan**, aim at the projector, confirm with fingerprint or PIN, and see *Present* or *Late*. While the camera reads the code, the app listens for the classroom beacon.
 5. **My modules:** see upcoming sessions, attendance history and attendance % for each module.
 
 ---
@@ -78,11 +79,16 @@ The **experiment** runs on top of this system.
  └─────────────────────────────┘  └─────────────┬──────────────┘  └──────────────▲──────────────┘
                                                 │       camera views QR         │
                                                 └───────────────────────────────┘
+ ┌─────────────────────────────┐   polls /beacon/current every 2 s     Bluetooth LE advert
+ │ Beacon app (Kotlin) on the  │ ───────────────────────────────────►  (rotating code)  ──► student app
+ │ lecturer's phone            │   ◄── open check-in run + beacon key
+ └─────────────────────────────┘
 ```
 
 | Part | Tech | Location in repo |
 |---|---|---|
-| Student app | **Kotlin, Jetpack Compose**, CameraX, ZXing core, androidx.biometric, Android Keystore, WifiManager, OkHttp, Room | `apps/qr-android/` (new Gradle project) |
+| Student app | **Kotlin, Jetpack Compose**, CameraX, ZXing core, androidx.biometric, Android Keystore, BluetoothLeScanner, OkHttp, Room | `apps/qr-android/`, flavour `student` |
+| Beacon app (lecturer's phone) | **Kotlin, Jetpack Compose**, BluetoothLeAdvertiser, foreground service, Android Keystore, OkHttp | `apps/qr-android/`, flavour `beacon` |
 | Lecturer web portal | Next.js App Router pages (TypeScript/React), plain CSS modules, `qrcode` npm package for SVG QR codes | `apps/backend/src/app/(portal)/…` |
 | Projector pages | Next.js pages, fullscreen | `apps/backend/src/app/present/…` |
 | Server API | Existing Next.js route handlers, Prisma, PostgreSQL (Neon), Vercel | `apps/backend/src/app/api/v1/…` |
@@ -113,6 +119,8 @@ The **experiment** runs on top of this system.
 | `/present/register/[moduleId]` | Fullscreen registration QR (rotating, see §6.2) with the module title |
 | `/present/checkin/[windowId]` | Fullscreen rotating check-in QR, countdown, `seq` number, live counter |
 | `/experiment` | Experiment controls: create check-in windows with a chosen T and mode, export attempts CSV (see §9) |
+| `/beacons` | **Beacon phones**: link a phone with a one-time QR (2 min), each phone's live state (ready, broadcasting, Bluetooth off, app closed), remove |
+| `/sessions/[id]` · Start check-in | **Require the classroom beacon** tick box (on when a beacon phone is linked) and the beacon phone's live state; while open, how many phones heard it |
 
 ### 4.2 Adding students by CSV
 - **Template:** `index_number,name`, e.g. `220366X,Lokuhewa P. C.`. The importer also accepts a Moodle participants export if its columns can be mapped (ID number → index, first + last name → name).
@@ -133,7 +141,7 @@ The **experiment** runs on top of this system.
 
 ### 5.1 Screens (Jetpack Compose)
 1. **Welcome / setup:**
-   - asks for permissions;
+   - asks for permissions (camera; Bluetooth: "Nearby devices" on Android 12+, location on 6–11);
    - creates the Keystore key, which needs a fingerprint or PIN check;
    - registers the device with the server and gets a `deviceId`;
    - shows the key level (TEE or StrongBox).
@@ -143,7 +151,7 @@ The **experiment** runs on top of this system.
    - Clear error messages: *"Your index number is not on this module's list. Ask your lecturer to add you."*, *"Name doesn't match the lecturer's list."*, *"Registration is closed."*
 3. **My modules:** module cards in the same style as Moodle, each showing its attendance % (green above 80%, red below).
 4. **Module detail:** upcoming sessions, attendance history (present / late / absent / excused) and the %.
-5. **Scan (check-in):** camera preview with a frame overlay. Decoding runs in the background. When a code is decoded, the fingerprint/PIN prompt appears automatically.
+5. **Scan (check-in):** camera preview with a frame overlay. Decoding runs in the background, and a Bluetooth scan listens for the classroom beacon at the same time (status: found / looking / Bluetooth off, with a button to fix it). When a code is decoded, the fingerprint/PIN prompt appears automatically.
 6. **Result:** *Present* / *Late* / reason for rejection, plus the module and session title. In experiment mode it also shows decode time, total time, token age and frames processed.
 7. **Experiment settings** (hidden; long-press the title):
    - phone label;
@@ -176,18 +184,25 @@ All phone timings use `SystemClock.elapsedRealtimeNanos()` (monotonic):
 - **Timeout:** no decode within 20 s gives `NO_DECODE`, which is logged and uploaded later.
 
 ### 5.3 Permissions
-- `CAMERA`
+**Student app:**
+- `CAMERA`, `INTERNET`
 - `USE_BIOMETRIC` (and `USE_FINGERPRINT` for Android 6–8)
-- `ACCESS_WIFI_STATE` (SSID, all versions)
-- `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` (SSID on Android 8.1+; only requested there)
-- `INTERNET`
+- Classroom beacon: `BLUETOOTH_SCAN` with `neverForLocation` (Android 12+); `BLUETOOTH`, `BLUETOOTH_ADMIN` and `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` (Android 6–11 only, where Bluetooth scans need location, and location must be switched on)
+
+**Beacon app:** `CAMERA` (link code), `INTERNET`, `BLUETOOTH_ADVERTISE` (12+; `BLUETOOTH`/`BLUETOOTH_ADMIN` on 6–11), `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_CONNECTED_DEVICE`, `CHANGE_NETWORK_STATE` (lets the service start on 14+ before Nearby devices is granted), `POST_NOTIFICATIONS`, `WAKE_LOCK`.
 
 Runtime prompts are handled on first launch. **Minimum SDK 23 (Android 6.0)**, target SDK 35. CameraX, Jetpack Compose, Room and androidx.biometric all support API 23.
 
 ### 5.4 Build and install
-- Gradle project in `apps/qr-android`. Open it in Android Studio to run it on a phone.
+- Gradle project in `apps/qr-android` with two product flavours from one codebase: `student` (`lk.cse.attendance`) and `beacon` (`lk.cse.attendance.beacon`). Shared code is in `src/main`; each flavour has its own manifest in `src/student` / `src/beacon`, and the beacon app's code is in `src/beacon`.
+- `./gradlew assembleDebug` builds both: `app/build/outputs/apk/student/debug/app-student-debug.apk` and `app/build/outputs/apk/beacon/debug/app-beacon-debug.apk`. Unit tests: `./gradlew testStudentDebugUnitTest testBeaconDebugUnitTest`.
 - A GitHub Actions job builds a debug-signed APK, which can be downloaded from the workflow run.
 - The server URL is a `BuildConfig` field, also editable in settings.
+
+### 5.5 Beacon app (lecturer's phone)
+1. **Link:** permissions (camera, Nearby devices, notifications), then scan the link code from the portal. The app creates its own EC P-256 Keystore key **without user authentication** (it runs unattended) and sends the public key with the code.
+2. **Main screen:** the beacon's state (*Waiting for check-in* / *Broadcasting · module · session* / *Bluetooth is off* / *No connection*), a **Beacon on** switch, range (small room / hall / large hall = Low / Medium / High power), server, and *Unlink this phone*.
+3. **Automatic on/off:** a foreground service polls `GET /beacon/current` every 2 s. While the lecturer has an open check-in, it broadcasts that run's code; when the run ends, it stops. It keeps a known run going through network drops of up to 5 minutes.
 
 ---
 
@@ -238,6 +253,7 @@ token = base64url( id(16) | seq(4) | HMAC-SHA256(secret, purpose | id | seq)[0..
 - `id` is the moduleId for registration and the check-in windowId for check-in.
 - `purpose` is `R` or `C`, so a registration code can never be used as a check-in code.
 - The registration QR rotates slowly (T = 30 s). The check-in QR uses the window's T.
+- **Beacon link QR** (portal, Beacon phones): `QA1:B:<code>`, a signed one-time code (2 minutes) naming the lecturer. Shown on the laptop only, never on the projector.
 
 ### 6.3 Rotating tokens
 A token is computed from the time, so the server needs no stored token list:
@@ -263,6 +279,7 @@ issuedAt   = window.startedAt + seq × T
    - check-in: `"QRv1-CHK" | token | deviceId | attemptId`.
 
    The server verifies each signature with the stored public key.
+5. **Beacon phone** (its own key, no user authentication): link `"QRv1-BEACON-LINK" | code`, login `"QRv1-BEACON-LOGIN" | beaconId | nonce` → a 15-minute access JWT (`typ: beacon`), renewed by signing a new challenge.
 
 **How the key is unlocked on each Android version** (minimum Android 6):
 
@@ -273,20 +290,32 @@ issuedAt   = window.startedAt + seq × T
 
 Each attempt logs which method was used (`authMethod`), so `biometricMs` can be compared fairly in the report.
 
-### 6.5 Wi-Fi check
-- **Reading the network:** the app reads the SSID with `WifiManager.getConnectionInfo()`. On Android 12+ it can also come from a `ConnectivityManager.NetworkCallback` with `FLAG_INCLUDE_LOCATION_INFO`. What Android requires depends on the version:
+### 6.5 Classroom beacon (being in the room)
+The rotating QR stops old screenshots, but not someone outside the room who is sent a fresh one. A Wi-Fi name check was considered and dropped: anyone can rename a home router to `UOM_WIRELESS`. Instead, the lecturer's Android phone broadcasts a **Bluetooth LE beacon** with a rotating, signed code, and a check-in must include a current code heard by the student's phone.
 
-| Android | Needed to read the SSID |
+**Advert** (same bytes in `apps/backend/src/lib/beacon.ts` and `core/BeaconCode.kt`):
+
+```
+manufacturer data, company ID 0xFFFF (reserved for testing), non-connectable, no device name
+payload = "CA" | version 1 | seq (4, big-endian) | HMAC-SHA256(key, "B" | seq)[0..8]   → 15 bytes
+key     = HMAC-SHA256(window secret, "QA1-BEACON-KEY")   (the beacon phone gets only this key)
+seq     = floor((server now − window.startedAt) / 5 s)
+```
+
+- **Beacon phone:** knows the server time from each poll and the monotonic clock in between, and restarts the advert with each new code (minSdk 23 can't update a running advert).
+- **Student phone:** `BluetoothLeScanner` with a filter on company ID 0xFFFF and the `CA 01` prefix, running while the scanner is open. The check-in sends up to 5 codes heard in the last 30 s, strongest first: `beacons: [{ data, rssi, heardAgoMs }]`. If none has been heard when the signature is made, the app waits up to 3 s more (not in experiment runs). The signed message is unchanged.
+- **Server rule:** a code is valid if its HMAC matches this run's key and it was issued no more than **30 s** before the check-in arrived (2 s allowed the other way for clock skew), on the server clock. `beaconOk` = true (valid code), false (codes, none valid), null (none sent); the strongest valid code's `beaconRssi` and `beaconAgeMs` are stored. Signal strength is recorded only; a threshold can be set after the range test.
+- **When it's required:** each check-in window has `requireBeacon`. Normal classes: on when the lecturer has a linked beacon phone (the lecturer can untick it, e.g. when the phone is forgotten). **Experiment runs (genuine and relay) never require it**; they record the result only, so the beacon can't change the measured times, and the relay receiver sits outside the hall by design.
+- **Verdict:** `NO_BEACON` (*"Classroom beacon not found. Turn on Bluetooth and move closer to the front, then scan again."*), checked after the time window and before the duplicate check (§6.1).
+- **Permissions per Android version** (student phone):
+
+| Android | Needed to hear the beacon |
 |---|---|
-| 6.0 – 8.0 (API 23–26) | `ACCESS_WIFI_STATE` only. No location permission |
-| 8.1 (API 27) | + `ACCESS_COARSE_LOCATION` or `ACCESS_FINE_LOCATION` granted |
-| 9 (API 28) | + location services switched on |
-| 10+ (API 29+) | `ACCESS_FINE_LOCATION` granted + location services on |
+| 6–11 (API 23–30) | `ACCESS_FINE_LOCATION` (or COARSE on 6–9) granted **and** location switched on; Bluetooth on |
+| 12+ (API 31+) | `BLUETOOTH_SCAN` ("Nearby devices") with `neverForLocation`; Bluetooth on. No location permission |
 
-- **Unknown SSID:** if a requirement is missing, Android returns `<unknown ssid>`. The app logs that as `ssid = UNKNOWN`, and the check counts as failed when it is enforced.
-- **Settings:** each session has an optional `expectedSsid`, and each check-in window has `enforceWifi`.
-- **Normal classes and genuine experiment runs:** enforced. A wrong network gives `WRONG_NETWORK`.
-- **Relay experiment runs:** logged only, so the interval alone decides the outcome.
+- **What it proves:** the phone was within Bluetooth range of the beacon (about 10–30 m indoors, depending on power, walls and people) within the last 30 s. It doesn't stop a determined live relay of both the QR and the beacon by two people with two devices; that's a stated limitation.
+- **Not covered:** iPhones. A web app can't hear Bluetooth beacons (Safari and every iPhone browser have no Web Bluetooth), so iPhone support would need a native iOS app.
 
 ### 6.6 Data model (Prisma)
 
@@ -299,10 +328,11 @@ Each attempt logs which method was used (`authMethod`), so `biometricMs` can be 
 | `RosterEntry` | id, moduleId, studentId, rosterName, addedVia (`MANUAL`/`CSV`), addedAt, **registeredAt** (null = not registered), registeredDeviceId. Unique (moduleId, studentId) |
 | `Device` | id, studentId (null until bound), publicKey (SPKI), keyLevel (TEE/StrongBox), model, manufacturer, androidSdk, status (`ACTIVE`/`REVOKED`), label (experiment, e.g. "P1-lowend"), createdAt, boundAt. **At most one ACTIVE device per student** (partial unique index) |
 | `RegistrationEvent` | id, moduleId, deviceId, indexNumberTyped, verdict, at (for the lecturer's "failed registrations" list) |
-| `Session` | id, moduleId, title, startsAt, endsAt, venue, opensBeforeMin (15), lateAfterMin (15), expectedSsid, isExperiment. CHECK endsAt > startsAt |
-| `CheckinWindow` | id, sessionId, intervalSec, graceSec (2), secret, enforceWifi, mode (`NORMAL` / `EXP_GENUINE` / `EXP_RELAY`), label, startedAt, endedAt |
+| `Session` | id, moduleId, title, startsAt, endsAt, venue, opensBeforeMin (15), lateAfterMin (15), isExperiment. CHECK endsAt > startsAt |
+| `BeaconPhone` | id, lecturerId, publicKey (SPKI), keyLevel, model, manufacturer, androidSdk, pairingId (unique: each link code works once), createdAt, lastSeenAt, lastState (`waiting` / `broadcasting` / `bluetooth_off` / `no_permission` / `cant_broadcast`) |
+| `CheckinWindow` | id, sessionId, intervalSec, graceSec (2), secret, requireBeacon, mode (`NORMAL` / `EXP_GENUINE` / `EXP_RELAY`), label, startedAt, endedAt |
 | `Attendance` | id, sessionId, studentId, status (`PRESENT`/`LATE`/`EXCUSED`), source (`QR`/`MANUAL`), attemptId, markedAt, markedBy, note. Unique (sessionId, studentId). *Absent* = registered but no row |
-| `Attempt` | id (client UUID), windowId, deviceId, studentId, **label fields** (phone, distanceRow, distanceM, role, runNo, attemptNo), **client timings** (decodeMs, framesProcessed, framesDropped, biometricMs, postRttMs, totalMs, authMethod, androidSdk), **server fields** (seq, issuedAt, receivedAt, **tokenAgeMs**), ssid, wifiOk, **verdict** (`OK`, `EXPIRED`, `BAD_TOKEN`, `BAD_SIGNATURE`, `WRONG_NETWORK`, `NOT_REGISTERED`, `OUTSIDE_TIME`, `DUPLICATE`, `NO_DECODE`, `CANCELLED`), reason |
+| `Attempt` | id (client UUID), windowId, deviceId, studentId, **label fields** (phone, distanceRow, distanceM, role, runNo, attemptNo), **client timings** (decodeMs, framesProcessed, framesDropped, biometricMs, postRttMs, totalMs, authMethod, androidSdk), **server fields** (seq, issuedAt, receivedAt, **tokenAgeMs**), **beacon** (beaconOk, beaconRssi, beaconAgeMs), **verdict** (`OK`, `EXPIRED`, `BAD_TOKEN`, `BAD_SIGNATURE`, `NO_BEACON`, `NOT_REGISTERED`, `OUTSIDE_TIME`, `DUPLICATE`, `NO_DECODE`, `CANCELLED`, `NETWORK_ERROR`; `WRONG_NETWORK` is kept only for old rows), reason |
 
 ### 6.7 API (`/api/v1`)
 
@@ -341,7 +371,7 @@ Each attempt logs which method was used (`authMethod`), so `biometricMs` can be 
 |---|---|---|---|
 | GET · POST | `/modules/{id}/sessions` | lecturer | List / create (optional `repeatWeeks`) |
 | GET · PATCH · DELETE | `/sessions/{id}` | lecturer | View / edit / delete |
-| POST | `/sessions/{id}/windows` | lecturer | **Start check-in**: `{intervalSec?, enforceWifi?, mode?, label?}` → windowId |
+| POST | `/sessions/{id}/windows` | lecturer | **Start check-in**: `{intervalSec?, requireBeacon?, mode?, label?}` → windowId |
 | POST | `/windows/{id}/end` | lecturer | Stop check-in |
 | GET | `/windows/{id}/token` | check-in projector page | Current token, `seq`, `issuedAt`, `validUntil`, server time |
 | GET | `/windows/{id}/live` | projector / portal | Checked-in count and latest names |
@@ -351,6 +381,9 @@ Each attempt logs which method was used (`authMethod`), so `biometricMs` can be 
 | PUT | `/sessions/{id}/attendance/{studentId}` | lecturer | Manual mark `{status, note}` (logged) |
 | GET | `/modules/{id}/attendance` | lecturer | Student × session matrix, per-student %, below-80% list |
 | GET | `/modules/{id}/attendance.csv` | lecturer | Attendance export |
+| GET | `/beacons` | lecturer | Linked beacon phones with live state |
+| POST | `/beacons/link-code` | lecturer | One-time link QR `QA1:B:…` (2 minutes) |
+| DELETE | `/beacons/{id}` | lecturer | Remove a beacon phone (it gets `UNLINKED`) |
 
 **Student app**
 
@@ -361,6 +394,14 @@ Each attempt logs which method was used (`authMethod`), so `biometricMs` can be 
 | GET | `/student/me` | Bound student (index, names per module) or "not registered yet" |
 | GET | `/student/modules` | My registered modules with attendance % |
 | GET | `/student/modules/{id}` | Sessions (upcoming and past) and my attendance |
+
+**Beacon app**
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/beacon/link` | `{code, publicKey, keyLevel, model, manufacturer, androidSdk, signature}` → `{beaconId, lecturer}` |
+| POST | `/beacon/auth/challenge` · `/beacon/auth/verify` | Challenge–response login → 15-minute JWT (`typ: beacon`) |
+| GET | `/beacon/current?state=…` | Polled every 2 s: records the phone's state → `{serverTime, lecturer, run: {windowId, key, startedAt, rotateSec, mode, requireBeacon, session, module} \| null}` |
 
 **Experiment**
 
@@ -384,7 +425,7 @@ Each attempt logs which method was used (`authMethod`), so `biometricMs` can be 
 ---
 
 ## 8. What is *not* in scope
-- An iPhone app (Android only; stated in the limitations).
+- An iPhone app (Android only; stated in the limitations). A web app for iPhones couldn't hear the classroom beacon (§6.5).
 - Push reminders before class (possible later with FCM; not needed for the experiment).
 - Students self-enrolling without being on the lecturer's roster.
 - Moodle integration (CSV import only).
@@ -400,6 +441,7 @@ Each attempt logs which method was used (`authMethod`), so `biometricMs` can be 
 - **Check-in windows:** each run is one check-in window with a fixed T (5 / 10 / 20 s) and mode `EXP_GENUINE` or `EXP_RELAY`.
 - **Repeat check-ins:** these sessions allow repeated check-ins by the same student. Every attempt is logged, even though only one attendance row is kept.
 - **Run labels:** the hidden experiment settings in the app add the labels (phone, distance, run, attempt) to each attempt.
+- **Classroom beacon:** experiment runs record whether the phone heard the beacon but never require it, and the app doesn't wait for it, so it doesn't change the measured times (§6.5).
 
 ### 9.2 Factors and constants
 | | Levels |
@@ -421,7 +463,7 @@ Each attempt logs which method was used (`authMethod`), so `biometricMs` can be 
 - **Ground truth:** the run sheet pre-labels every attempt (phone, distance, T, run, attempt number). The server log and the projector `seq` give the true issue time of every token.
 
 ### 9.4 Relay trials
-- **At least 10 relays per interval** (30 total). Relay windows use `mode = EXP_RELAY`, with the Wi-Fi rule **not enforced**.
+- **At least 10 relays per interval** (30 total). Relay windows use `mode = EXP_RELAY`; the classroom beacon is **not required** (the receiver is outside the hall by design).
 - **Procedure:**
   1. **Sender in the hall** (any phone) screenshots the projector QR as soon as it changes;
   2. sends it on WhatsApp to the **receiver outside the hall** (e.g. the library, on campus Wi-Fi);
@@ -434,6 +476,7 @@ One short session in the hall:
 - check the QR size is decodable from the back row;
 - check the 20 s timeout is long enough;
 - measure network round-trip times;
+- **beacon range test:** with the beacon phone on the desk at Low / Medium / High power, record whether phones at the front, middle and back rows, in the corridor and in the next room hear it (and the signal strength). Choose the power for normal classes;
 - run one real registration and check-in end to end;
 - fix any app bugs.
 
@@ -467,7 +510,7 @@ Pilot data is **not** used in the results.
 | Report §1 Introduction (≥2 references) | Android docs: CameraX ImageAnalysis, BiometricPrompt / Keystore; papers on QR attendance and relay attacks |
 | §2 Prototype and method | Block diagram (§3), short description of the real system (§2), check-in pipeline (§5.2, §6), protocol (§9) |
 | §3 Results | Figures 1–4 and the summary tables |
-| §4 Discussion and limitations | Device heterogeneity, projector glare and lighting, WhatsApp compression, one hall, two phones, Android-only, Wi-Fi SSID permission and spoofing, first-come registration risk, biometric time depends on the person |
+| §4 Discussion and limitations | Device heterogeneity, projector glare and lighting, WhatsApp compression, one hall, two phones, Android-only, classroom beacon range (walls, corridors) and live relay of both QR and beacon, first-come registration risk, biometric time depends on the person |
 | §5 Contributions | The work split below |
 | Data package | `attempts.csv` (raw, pseudonymised), run sheets, analysis script, figures, `apps/qr-android` source, README, **AI-usage log** |
 | Demo deliverables | Lecturer creates a module, imports a CSV, a student registers; live check-in from the hall; screenshot relay rejected at T = 5 s; attendance view with the 80% line; results and plots |
@@ -485,6 +528,7 @@ Pilot data is **not** used in the results.
 | Android: Keystore + fingerprint/PIN per Android version, device login | ✅ | |
 | Android: registration flow, My modules, module detail | | ✅ |
 | Android: Room log, upload, experiment settings | shared | shared |
+| Android: beacon app (link, service, advertising) + student beacon scan | ✅ | review |
 | Run sheet + protocol + pilot | shared | shared |
 | Running the experiment (one tester per phone) | P1 | P2 |
 | Analysis script + figures | | ✅ |
@@ -520,9 +564,13 @@ Pilot data is **not** used in the results.
 | WhatsApp compresses the screenshot | Realistic for an attacker; report the relay decode failures separately |
 | Campus Wi-Fi drops | Retries logged; `postRttMs` recorded separately so network delay doesn't hide decode time |
 | Biometric time differs by person | Same tester per phone; `biometricMs` reported separately |
-| Android 9+ needs location on for the SSID (8.1+ needs the location permission) | Turn on location during runs; the app warns if it's off or the SSID reads `<unknown ssid>` |
+| Android 6–11 need location on for Bluetooth scans | The scanner shows "Location off" with a button to the settings; Android 12+ needs no location |
+| Bluetooth off on a student's phone | The scanner shows "Bluetooth off" with a button to the settings; the rejection message says to turn it on |
 | Android 6–10 PIN-only phones unlock the key differently | Log `authMethod`; report biometric and PIN times separately |
-| A hotspot can be renamed to the campus SSID | Stated as a limitation: the SSID check stops casual remote check-ins, not a determined attacker |
+| Someone outside the room is sent a fresh QR | Classroom beacon (§6.5): the phone must hear a current beacon code. Remaining limitation: a live relay of both QR and beacon |
+| Lecturer forgets the beacon phone, or it's off | Its live state shows on the session page; untick *Require the classroom beacon* for that class |
+| Beacon leaks into the corridor or next room, or misses the back rows | Range test in the pilot (§9.5); power setting on the beacon phone; signal strength is logged for a later threshold |
+| A phone can't broadcast (old Bluetooth chip) | The beacon app detects it and says so; use another Android phone |
 | Someone registers as a classmate first | Rotating registration QR (must be in the room); lecturer sees phone model and time; **Reset device** fixes it |
 | Lecturer's name and student's typed name differ slightly | Punctuation/space/case-insensitive match; lecturer can edit the roster name |
 | Phone clock wrong | Token age uses server time only |

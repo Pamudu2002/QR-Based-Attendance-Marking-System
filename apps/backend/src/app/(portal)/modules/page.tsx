@@ -102,9 +102,9 @@ export default async function ModulesPage({ searchParams }: { searchParams: Prom
                   <Link className={`lu-btn ${s.full}`} href={`/modules/${m.id}`} style={{ flex: 1 }}>
                     Open module
                   </Link>
-                  <Link className="lu-btn lu-btn--ghost" href={`/modules/${m.id}/registration`}>
-                    Registration
-                  </Link>
+                  <a className="lu-btn lu-btn--ghost" href={`/present/register/${m.id}`} target="_blank" rel="noopener">
+                    Registration QR
+                  </a>
                 </div>
               </article>
             ))}

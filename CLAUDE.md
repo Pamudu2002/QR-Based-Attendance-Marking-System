@@ -24,7 +24,7 @@ The full plan is in [`docs/PLAN.md`](docs/PLAN.md). Follow it. Ask before changi
 
 ### Hard requirements from the assignment brief
 - The phone app is **native Android in Kotlin**. Do not use React Native, Flutter or another cross-platform framework.
-- Use **low-level platform APIs** directly: CameraX `ImageAnalysis` with our own decoding (ZXing core on the Y plane), Android Keystore, BiometricPrompt, WifiManager. Do not use high-level scanner wrappers (e.g. ML Kit code scanner UI, ZXing `IntentIntegrator`/embedded activity).
+- Use **low-level platform APIs** directly: CameraX `ImageAnalysis` with our own decoding (ZXing core on the Y plane), Android Keystore, BiometricPrompt, Bluetooth LE (`BluetoothLeScanner` / `BluetoothLeAdvertiser`). Do not use high-level scanner wrappers (e.g. ML Kit code scanner UI, ZXing `IntentIntegrator`/embedded activity).
 - Every check-in attempt must be logged with its timings so it can be analysed (mean ± SD, ≥3 runs per condition).
 - Privacy: no names or index numbers in experiment exports. Device and student IDs are hashed.
 - The experiment carries the marks. Keep the portal simple, and build in the Must / Should / Could order in `docs/PLAN.md` §13.
@@ -65,7 +65,7 @@ The UI follows the Lumora design system. Read `design/README.md` before building
 ## Conventions
 
 ### Android (`apps/qr-android`)
-- Kotlin, Jetpack Compose, min SDK 23 (Android 6.0), target SDK 35. Wi-Fi SSID and key-unlock code must follow the per-version tables in `docs/PLAN.md` §6.4–6.5.
+- Kotlin, Jetpack Compose, min SDK 23 (Android 6.0), target SDK 35. Bluetooth permissions and key-unlock code must follow the per-version tables in `docs/PLAN.md` §6.4–6.5. Two flavours: `student` and `beacon` (the lecturer's classroom beacon, PLAN §5.5).
 - Timings use `SystemClock.elapsedRealtimeNanos()`. Do not use wall-clock time for durations.
 - Camera: `ImageAnalysis`, fixed 1280×720, `STRATEGY_KEEP_ONLY_LATEST`, `YUV_420_888`. Count processed and dropped frames.
 - Keystore: EC P-256, `SHA256withECDSA`, DER signatures. Public key as X.509 SPKI DER, base64 in JSON. StrongBox when available, else TEE.
@@ -91,7 +91,7 @@ pnpm --filter @attendance/backend test         # needs local Postgres (DB attend
 
 # Android (from apps/qr-android)
 ./gradlew assembleDebug
-./gradlew testDebugUnitTest
+./gradlew testStudentDebugUnitTest testBeaconDebugUnitTest
 
 # Analysis
 python analysis/qr/make_run_sheet.py

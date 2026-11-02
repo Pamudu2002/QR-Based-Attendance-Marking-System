@@ -1,0 +1,43 @@
+/* Fullscreen projector pages (design/screens/Projector.dc.html). Sized to the
+   viewport so the QR keeps a fixed share of the screen height on any projector. */
+
+.root { height: 100vh; padding: 40px 48px; display: flex; gap: 40px; background: var(--canvas); color: var(--ink); overflow: hidden; }
+.info { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { font-family: var(--font-display); font-size: 24px; line-height: 30px; font-weight: 500; }
+.brand span { color: var(--ink-muted); }
+.moduleBadge { height: 24px; font-size: 12px; font-family: var(--font-mono); font-weight: 500; }
+.headline { margin: 0; font-family: var(--font-display); font-size: clamp(40px, 6vh, 64px); line-height: 1.06; font-weight: 500; letter-spacing: -0.02em; }
+.lead { margin: 0; font-size: 20px; line-height: 28px; color: var(--ink-muted); }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 18px; line-height: 26px; }
+.steps li { display: flex; align-items: center; gap: 14px; }
+.stepNum { width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; }
+.stepNumLast { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.bottom { display: flex; gap: 12px; align-items: stretch; }
+.counter { flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.counterHead { display: flex; justify-content: space-between; align-items: baseline; }
+.counterHead > span:first-child { font-size: 15px; font-weight: 600; }
+.count { font-size: 28px; line-height: 34px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.count small { font-size: 15px; font-weight: 400; color: var(--ink-muted); }
+.bar { height: 8px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; display: block; }
+.bar > span { display: block; height: 100%; background: var(--brand); border-radius: 999px; transition: width 0.4s; }
+.controls { display: flex; flex-direction: column; gap: 8px; justify-content: flex-end; }
+.controls > * { justify-content: center; }
+
+.qrSide { flex: none; display: flex; align-items: center; justify-content: center; }
+/* The QR is always black on white, in both themes. */
+.paper { --qr: min(58vh, 42vw); background: #ffffff; box-shadow: var(--shadow-page); padding: calc(var(--qr) * 0.095); display: flex; flex-direction: column; align-items: center; gap: 20px; color: #141b1c; }
+.qr { width: var(--qr); height: var(--qr); display: block; }
+.qr svg { width: 100%; height: 100%; display: block; }
+.qrMeta { width: var(--qr); display: flex; flex-direction: column; gap: 8px; }
+.countdown { height: 6px; border-radius: 999px; background: #e0e3de; overflow: hidden; }
+.countdown > div { height: 100%; background: #0d6767; border-radius: 999px; }
+.metaRow { display: flex; justify-content: space-between; font-size: 15px; font-weight: 600; }
+.seq { font-family: "Cascadia Mono", ui-monospace, monospace; font-weight: 400; color: #545f61; font-variant-numeric: tabular-nums; }
+.drift { font-size: 11px; line-height: 16px; color: #545f61; text-align: center; }
+.closed { width: var(--qr); height: var(--qr); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; color: #545f61; font-size: 18px; line-height: 26px; }
+
+@media (max-width: 900px) {
+  .root { flex-direction: column; height: auto; min-height: 100vh; padding: 24px 16px; }
+  .paper { --qr: min(80vw, 60vh); }
+}

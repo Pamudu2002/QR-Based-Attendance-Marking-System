@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, Upload } from "lucide-react";
+import { Pencil, QrCode, Upload } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { Topbar } from "@/components/Topbar";
 import { ico } from "@/components/icon";
@@ -34,6 +34,10 @@ export default async function ModuleLayout({
             </h1>
           </div>
           <div className={s.actions}>
+            <a className="lu-btn" href={`/present/register/${id}`} target="_blank" rel="noopener">
+              <QrCode {...ico} />
+              Show registration QR
+            </a>
             <Link className="lu-btn" href={`/modules/${id}/import`}>
               <Upload {...ico} />
               Import CSV

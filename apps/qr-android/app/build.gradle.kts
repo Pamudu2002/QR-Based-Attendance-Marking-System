@@ -17,7 +17,7 @@ android {
         versionCode = 2
         versionName = "0.4.0"
         // Default server; editable in Settings.
-        buildConfigField("String", "SERVER_URL", "\"https://attendance-backend-steel.vercel.app\"")
+        buildConfigField("String", "SERVER_URL", "\"https://qr-based-attendance-marking-system.vercel.app\"")
     }
 
     // Two apps from one codebase (PLAN §5, §6.5): the student app, and CSE Attendance

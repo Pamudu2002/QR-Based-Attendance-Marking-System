@@ -14,10 +14,25 @@ android {
         applicationId = "lk.cse.attendance"
         minSdk = 23
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.3.0"
+        versionCode = 2
+        versionName = "0.4.0"
         // Default server; editable in Settings.
         buildConfigField("String", "SERVER_URL", "\"https://attendance-backend-steel.vercel.app\"")
+    }
+
+    // Two apps from one codebase (PLAN §5, §6.5): the student app, and CSE Attendance
+    // Beacon for the lecturer's phone. Shared code is in src/main; each has its own
+    // manifest (permissions, entry point) in src/student and src/beacon.
+    flavorDimensions += "role"
+    productFlavors {
+        create("student") {
+            dimension = "role"
+            applicationId = "lk.cse.attendance"
+        }
+        create("beacon") {
+            dimension = "role"
+            applicationId = "lk.cse.attendance.beacon"
+        }
     }
 
     buildTypes {
@@ -29,7 +44,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        // java.time on Android 6�7
+        // java.time on Android 6–7
         isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
@@ -67,7 +82,7 @@ dependencies {
     implementation(libs.camera.view)
     implementation(libs.zxing.core)
 
-    // Attempt log on the phone (PLAN �5.2)
+    // Attempt log on the phone (PLAN §5.2)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)

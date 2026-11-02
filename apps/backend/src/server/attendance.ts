@@ -26,7 +26,7 @@ export async function sessionAttendance(lecturerId: string, sessionId: string) {
     db.checkinWindow.findMany({
       where: { sessionId },
       orderBy: { startedAt: "desc" },
-      select: { id: true, intervalSec: true, graceSec: true, enforceWifi: true, mode: true, label: true, startedAt: true, endedAt: true, _count: { select: { attempts: true } } },
+      select: { id: true, intervalSec: true, graceSec: true, requireBeacon: true, mode: true, label: true, startedAt: true, endedAt: true, _count: { select: { attempts: true } } },
     }),
   ]);
   const markBy = new Map(marks.map((m) => [m.studentId, m]));
@@ -185,7 +185,7 @@ export async function attemptsCsv(lecturerId: string) {
     },
     orderBy: { createdAt: "asc" },
     include: {
-      window: { select: { id: true, label: true, mode: true, intervalSec: true, graceSec: true, session: { select: { isExperiment: true } } } },
+      window: { select: { id: true, label: true, mode: true, intervalSec: true, graceSec: true, requireBeacon: true, session: { select: { isExperiment: true } } } },
       device: { select: { model: true, keyLevel: true } },
     },
   });
@@ -195,14 +195,14 @@ export async function attemptsCsv(lecturerId: string) {
     "phone_label", "distance_row", "distance_m", "role", "run_no", "attempt_no",
     "device", "student", "device_model", "android_sdk", "key_level", "auth_method",
     "first_frame_ms", "decode_ms", "frames_processed", "frames_dropped", "biometric_ms", "post_rtt_ms", "total_ms",
-    "seq", "issued_at", "received_at", "token_age_ms", "wifi_ok", "verdict", "reason",
+    "seq", "issued_at", "received_at", "token_age_ms", "require_beacon", "beacon_ok", "beacon_rssi", "beacon_age_ms", "verdict", "reason",
   ];
   const rows = attempts.map((a) => [
     a.id, a.createdAt, a.window?.id, a.window?.label, a.window?.mode, a.window?.intervalSec, a.window?.graceSec, a.window?.session.isExperiment,
     a.phoneLabel, a.distanceRow, a.distanceM, a.role, a.runNo, a.attemptNo,
     pseudonym("device", a.deviceId), pseudonym("student", a.studentId), a.device?.model, a.androidSdk, a.device?.keyLevel, a.authMethod,
     a.firstFrameMs, a.decodeMs, a.framesProcessed, a.framesDropped, a.biometricMs, a.postRttMs, a.totalMs,
-    a.seq, a.issuedAt, a.receivedAt, a.tokenAgeMs, a.wifiOk, a.verdict, a.reason,
+    a.seq, a.issuedAt, a.receivedAt, a.tokenAgeMs, a.window?.requireBeacon, a.beaconOk, a.beaconRssi, a.beaconAgeMs, a.verdict, a.reason,
   ]);
   return { header, rows };
 }

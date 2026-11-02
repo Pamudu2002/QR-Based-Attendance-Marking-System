@@ -3,10 +3,7 @@ package lk.cse.attendance.data
 import android.os.Build
 import android.os.SystemClock
 import java.util.UUID
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -28,8 +25,6 @@ data class DecodedScan(
     val token: String,
     val t0Nanos: Long,
     val stats: ScanStats,
-    /** Read when the scanner opened; null if not read yet. */
-    val ssid: String?,
 )
 
 sealed interface CheckInOutcome {
@@ -45,7 +40,7 @@ data class Timings(val decodeMs: Double, val biometricMs: Double, val postRttMs:
 private const val NS_PER_MS = 1_000_000.0
 
 /** Runs a check-in and keeps the attempt log (Room) in step with the server. */
-class CheckIns(private val session: Session, private val dao: AttemptDao) {
+class CheckIns(private val session: Session, private val dao: AttemptDao, val beacon: BeaconListener) {
     private val prefs get() = session.prefs
     private val api get() = session.api
     private val uploadLock = Mutex()
@@ -83,21 +78,20 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
     )
 
     /** No code within the timeout (PLAN §5.2: NO_DECODE). */
-    suspend fun logNoDecode(t0Nanos: Long, stats: ScanStats, ssid: String?, timeoutSec: Int) {
+    suspend fun logNoDecode(t0Nanos: Long, stats: ScanStats, timeoutSec: Int) {
         val e = baseEntity(UUID.randomUUID().toString(), takeLabels(), "NO_DECODE").copy(
             reason = "No code within $timeoutSec s",
             firstFrameMs = stats.firstFrameNanos.takeIf { it > 0 }?.let { ms(t0Nanos, it) },
             framesProcessed = stats.framesProcessed,
             framesDropped = stats.framesDropped,
             totalMs = ms(t0Nanos, SystemClock.elapsedRealtimeNanos()),
-            ssid = ssid,
         )
         dao.upsert(e)
         uploadInBackground()
     }
 
     /** The scanner was closed before a code was read (logged in experiment mode). */
-    suspend fun logScannerClosed(t0Nanos: Long, stats: ScanStats, ssid: String?) {
+    suspend fun logScannerClosed(t0Nanos: Long, stats: ScanStats) {
         if (!prefs.labelsOn) return
         val e = baseEntity(UUID.randomUUID().toString(), takeLabels(), "CANCELLED").copy(
             reason = "Scanner closed before a code was read",
@@ -105,7 +99,6 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
             framesProcessed = stats.framesProcessed,
             framesDropped = stats.framesDropped,
             totalMs = ms(t0Nanos, SystemClock.elapsedRealtimeNanos()),
-            ssid = ssid,
         )
         dao.upsert(e)
         uploadInBackground()
@@ -126,11 +119,8 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
             decodeMs = ms(scan.t0Nanos, t1),
             framesProcessed = scan.stats.framesProcessed,
             framesDropped = scan.stats.framesDropped,
-            ssid = scan.ssid,
         )
         dao.upsert(entity)
-        // If the scanner hadn't read the Wi-Fi name yet, read it during the fingerprint prompt.
-        val ssid: Deferred<String> = scan.ssid?.let { CompletableDeferred(it) } ?: background.async { WifiReader.read(activity).ssid }
 
         // Make sure the access token won't run out mid-check-in (may need a login prompt, rarely).
         try {
@@ -139,9 +129,11 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
             try {
                 session.logIn(activity)
             } catch (e: Exception) {
+                beacon.stop()
                 return finishLocal(entity.copy(verdict = "CANCELLED", reason = "Login needed: ${e.message}"), e)
             }
         } catch (e: ApiException) {
+            beacon.stop()
             return finishLocal(entity.copy(verdict = "NETWORK_ERROR", reason = e.message), e)
         }
 
@@ -152,20 +144,26 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
                 subtitle = "Confirm it's you",
             )
         } catch (e: Exception) {
+            beacon.stop()
             return finishLocal(
                 entity.copy(verdict = "CANCELLED", reason = if (e is AuthCancelledException) "Fingerprint or PIN cancelled" else e.message, biometricMs = ms(t1, SystemClock.elapsedRealtimeNanos())),
                 e,
             )
         }
         val t2 = SystemClock.elapsedRealtimeNanos()
-        entity = entity.copy(biometricMs = ms(t1, t2), authMethod = signed.authMethod, ssid = ssid.await())
+        // The beacon is usually heard while the camera reads the code. If not yet, give it
+        // up to 3 s more, but not in experiment runs, where it's recorded only and must not
+        // change the measured times (PLAN §9).
+        val beacons = beacon.recent(waitMs = if (prefs.labelsOn) 0 else 3_000)
+        beacon.stop()
+        entity = entity.copy(biometricMs = ms(t1, t2), authMethod = signed.authMethod, beaconRssi = beacons.firstOrNull()?.rssi)
         dao.upsert(entity)
 
         val request = CheckinRequest(
             token = QrPayload.CheckIn(scan.token).text,
             attemptId = id,
             signature = signed.signature,
-            ssid = entity.ssid,
+            beacons = beacons,
             phoneLabel = labels.phoneLabel,
             distanceRow = labels.distanceRow,
             distanceM = labels.distanceM,
@@ -192,6 +190,8 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
     }
 
     private suspend fun send(entity: AttemptEntity, request: CheckinRequest, t0Nanos: Long?, t2: Long): CheckInOutcome {
+        // The round trip is timed from the actual send, after any wait for the beacon.
+        val tSend = maxOf(t2, SystemClock.elapsedRealtimeNanos())
         val response = try {
             api.checkIn(request)
         } catch (e: ApiException) {
@@ -208,7 +208,7 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
         }
         val t3 = SystemClock.elapsedRealtimeNanos()
         unanswered = null
-        val postRttMs = ms(t2, t3)
+        val postRttMs = ms(tSend, t3)
         // After a retry there is no single t0 → t3 path, so total time is only kept for the first send.
         val totalMs = t0Nanos?.let { ms(it, t3) }
         dao.upsert(
@@ -218,6 +218,7 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
                 reason = if (response.verdict == "OK") entity.reason else response.message,
                 tokenAgeMs = response.tokenAgeMs,
                 seq = response.seq,
+                beaconOk = response.beaconOk,
                 postRttMs = postRttMs,
                 totalMs = totalMs ?: entity.totalMs,
                 sentToServer = true,
@@ -264,7 +265,6 @@ class CheckIns(private val session: Session, private val dao: AttemptDao) {
         verdict = if (sentToServer) null else verdict,
         reason = reason,
         token = token?.let { QrPayload.CheckIn(it).text },
-        ssid = ssid,
         phoneLabel = phoneLabel,
         distanceRow = distanceRow,
         distanceM = distanceM,

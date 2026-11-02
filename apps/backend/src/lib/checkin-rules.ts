@@ -6,7 +6,7 @@ export type CheckinVerdict =
   | "OK"
   | "EXPIRED"
   | "BAD_SIGNATURE"
-  | "WRONG_NETWORK"
+  | "NO_BEACON"
   | "UNKNOWN_DEVICE"
   | "DEVICE_REVOKED"
   | "NOT_REGISTERED"
@@ -27,11 +27,12 @@ export type CheckinState = {
     endsAtMs: number;
     opensBeforeMin: number;
     lateAfterMin: number;
-    expectedSsid: string | null;
     isExperiment: boolean;
   };
-  enforceWifi: boolean;
-  ssid: string | null;
+  /** The run requires the classroom beacon (PLAN §6.5). */
+  requireBeacon: boolean;
+  /** From checkBeacons: a current code for this run was heard; null = none sent. */
+  beaconOk: boolean | null;
   alreadyMarked: boolean;
 };
 
@@ -39,20 +40,13 @@ export type CheckinDecision = {
   verdict: CheckinVerdict;
   /** Set when a new attendance row is created. */
   attendance?: "PRESENT" | "LATE";
-  /** null when the session has no expected Wi-Fi name. */
-  wifiOk: boolean | null;
+  beaconOk: boolean | null;
 };
 
-/** "\"UniWiFi\"" → "UniWiFi"; missing or "<unknown ssid>" → "UNKNOWN" (PLAN §6.5). */
-export function normaliseSsid(raw: string | null | undefined): string {
-  const t = (raw ?? "").trim().replace(/^"(.*)"$/, "$1");
-  return !t || t === "<unknown ssid>" ? "UNKNOWN" : t;
-}
-
 export function decideCheckin(s: CheckinState): CheckinDecision {
-  const wifiOk = s.session.expectedSsid ? normaliseSsid(s.ssid) === s.session.expectedSsid.trim() : null;
+  const { beaconOk } = s;
   const out = (verdict: CheckinVerdict, attendance?: "PRESENT" | "LATE"): CheckinDecision =>
-    attendance ? { verdict, attendance, wifiOk } : { verdict, wifiOk };
+    attendance ? { verdict, attendance, beaconOk } : { verdict, beaconOk };
 
   if (s.device.status === "REVOKED") return out("DEVICE_REVOKED");
   if (!s.device.bound) return out("UNKNOWN_DEVICE");
@@ -62,7 +56,7 @@ export function decideCheckin(s: CheckinState): CheckinDecision {
 
   const opensAt = s.session.startsAtMs - s.session.opensBeforeMin * 60_000;
   if (s.receivedAtMs < opensAt || s.receivedAtMs > s.session.endsAtMs) return out("OUTSIDE_TIME");
-  if (s.enforceWifi && wifiOk === false) return out("WRONG_NETWORK");
+  if (s.requireBeacon && beaconOk !== true) return out("NO_BEACON");
 
   if (s.alreadyMarked) {
     // Experiment sessions take repeated check-ins: every attempt is logged,

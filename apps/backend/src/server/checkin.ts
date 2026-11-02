@@ -7,7 +7,8 @@ import { signedMessage, verifyDeviceSignature } from "@/lib/device-crypto";
 import { ApiError } from "@/lib/http";
 import { moduleDisplayName } from "@/lib/identity";
 import { checkToken, currentToken, macValid, readToken, stripPrefix, type Clock } from "@/lib/qr-token";
-import { decideCheckin, normaliseSsid } from "@/lib/checkin-rules";
+import { checkBeacons } from "@/lib/beacon";
+import { decideCheckin } from "@/lib/checkin-rules";
 import { getOwnedSession } from "./sessions";
 
 const windowClock = (w: { startedAt: Date; intervalSec: number }): Clock => ({
@@ -20,8 +21,11 @@ const windowClock = (w: { startedAt: Date; intervalSec: number }): Clock => ({
 export const WindowInput = z.object({
   /** QR refresh interval T. Normal classes default to 10 s (PLAN §6.3). */
   intervalSec: z.number().int().min(3).max(60).default(10),
-  /** Defaults to on when the session has a Wi-Fi name, except relay runs. */
-  enforceWifi: z.boolean().optional(),
+  /**
+   * Require the classroom beacon. Defaults to on for classes when the lecturer has
+   * a beacon phone; experiment runs only record it (PLAN §6.5, §9).
+   */
+  requireBeacon: z.boolean().optional(),
   mode: z.enum(["NORMAL", "EXP_GENUINE", "EXP_RELAY"]).default("NORMAL"),
   label: z.string().trim().max(60).nullish(),
 });
@@ -32,6 +36,7 @@ export async function startWindow(lecturerId: string, sessionId: string, input: 
   if (input.mode !== "NORMAL" && !session.isExperiment) {
     throw ApiError.badRequest("Experiment runs need an experiment session. Mark the session as an experiment first.");
   }
+  const beaconPhones = await db.beaconPhone.count({ where: { lecturerId } });
   const now = new Date();
   const [, window] = await db.$transaction([
     db.checkinWindow.updateMany({ where: { sessionId, endedAt: null }, data: { endedAt: now } }),
@@ -41,7 +46,7 @@ export async function startWindow(lecturerId: string, sessionId: string, input: 
         intervalSec: input.intervalSec,
         mode: input.mode,
         label: input.label ?? null,
-        enforceWifi: input.enforceWifi ?? (input.mode !== "EXP_RELAY" && !!session.expectedSsid),
+        requireBeacon: input.mode === "NORMAL" && (input.requireBeacon ?? beaconPhones > 0),
         secret: randomBytes(32).toString("base64url"),
         startedAt: now,
       },
@@ -78,7 +83,7 @@ const REJECTED: AttemptVerdict[] = [
   "EXPIRED",
   "BAD_TOKEN",
   "BAD_SIGNATURE",
-  "WRONG_NETWORK",
+  "NO_BEACON",
   "UNKNOWN_DEVICE",
   "DEVICE_REVOKED",
   "NOT_REGISTERED",
@@ -89,7 +94,7 @@ const REJECTED: AttemptVerdict[] = [
 export async function windowLive(lecturerId: string, windowId: string) {
   const window = await getOwnedWindow(lecturerId, windowId);
   const s = window.session;
-  const [registered, marks, verdicts, latest] = await Promise.all([
+  const [registered, marks, verdicts, latest, beaconHeard, beacon] = await Promise.all([
     db.rosterEntry.count({ where: { moduleId: s.moduleId, registeredAt: { not: null } } }),
     db.attendance.groupBy({ by: ["status"], where: { sessionId: s.id }, _count: { _all: true } }),
     db.attempt.groupBy({ by: ["verdict"], where: { windowId }, _count: { _all: true } }),
@@ -99,6 +104,8 @@ export async function windowLive(lecturerId: string, windowId: string) {
       take: 6,
       select: { status: true, markedAt: true, student: { select: { indexNumber: true } } },
     }),
+    db.attempt.count({ where: { windowId, beaconOk: true } }),
+    beaconStatus(s.module.lecturerId),
   ]);
   const count = (st: string) => marks.find((m) => m.status === st)?._count._all ?? 0;
   const attempts = verdicts.reduce((n, v) => n + v._count._all, 0);
@@ -116,7 +123,25 @@ export async function windowLive(lecturerId: string, windowId: string) {
     attempts,
     accepted: verdicts.find((v) => v.verdict === "OK")?._count._all ?? 0,
     latest: latest.map((l) => ({ indexNumber: l.student.indexNumber, status: l.status, at: l.markedAt })),
+    beacon: { required: window.requireBeacon, heardBy: beaconHeard, phones: beacon },
   };
+}
+
+/** The lecturer's beacon phones as last reported: online if seen in the last 8 s. */
+export async function beaconStatus(lecturerId: string) {
+  const phones = await db.beaconPhone.findMany({
+    where: { lecturerId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, model: true, lastSeenAt: true, lastState: true },
+  });
+  const now = Date.now();
+  return phones.map((p) => ({
+    id: p.id,
+    model: p.model,
+    online: !!p.lastSeenAt && now - p.lastSeenAt.getTime() < 8_000,
+    state: p.lastState,
+    lastSeenAt: p.lastSeenAt,
+  }));
 }
 
 // ── Check-in (app) ─────────────────────────────────────────────────────────
@@ -155,7 +180,19 @@ export const CheckinInput = ClientFields.extend({
   attemptId: z.uuid(),
   /** base64 DER signature of "QRv1-CHK|token|deviceId|attemptId" */
   signature: z.string().min(1).max(200),
-  ssid: z.string().max(64).nullish(),
+  /** Classroom beacon codes heard while scanning (PLAN §6.5), strongest first. */
+  beacons: z
+    .array(
+      z.object({
+        /** The 15-byte manufacturer data, base64 */
+        data: z.string().max(64),
+        rssi: z.number().int().min(-127).max(20),
+        /** How long before sending it was heard (phone's monotonic clock) */
+        heardAgoMs: z.number().min(0).max(600_000).nullish(),
+      }),
+    )
+    .max(5)
+    .default([]),
 });
 
 const MESSAGES: Record<string, string> = {
@@ -165,7 +202,7 @@ const MESSAGES: Record<string, string> = {
   EXPIRED: "That code had already changed. Scan the code on the projector again.",
   BAD_TOKEN: "That isn't a check-in code for an open class.",
   BAD_SIGNATURE: "This phone couldn't prove it's yours. Set up the app again.",
-  WRONG_NETWORK: "Connect to the class Wi-Fi and scan again.",
+  NO_BEACON: "Classroom beacon not found. Turn on Bluetooth and move closer to the front, then scan again.",
   UNKNOWN_DEVICE: "Register for this module first: scan its registration QR.",
   DEVICE_REVOKED: "This phone was reset by your lecturer. Set up the app again.",
   NOT_REGISTERED: "You're not registered for this module. Scan its registration QR first.",
@@ -208,7 +245,7 @@ async function resultFor(attemptId: string) {
     issuedAt: a.issuedAt,
     receivedAt: a.receivedAt,
     serverTime: new Date(),
-    wifiOk: a.wifiOk,
+    beaconOk: a.beaconOk,
     windowId: a.windowId,
     intervalSec: a.window?.intervalSec ?? null,
     graceSec: a.window?.graceSec ?? null,
@@ -238,7 +275,6 @@ export async function checkIn(device: CheckinDevice, input: z.infer<typeof Check
     androidSdk: input.androidSdk ?? device.androidSdk,
     deviceId: device.id,
     studentId: device.studentId,
-    ssid: input.ssid == null ? null : normaliseSsid(input.ssid),
     receivedAt,
   };
 
@@ -276,6 +312,7 @@ export async function checkIn(device: CheckinDevice, input: z.infer<typeof Check
 
   const session = window.session;
   const signatureOk = verifyDeviceSignature(device.publicKey, signedMessage.checkin(token, device.id, input.attemptId), input.signature);
+  const beacon = checkBeacons(window.secret, window.startedAt.getTime(), input.beacons, receivedAtMs);
   const [roster, mark] = device.studentId
     ? await Promise.all([
         db.rosterEntry.findUnique({ where: { moduleId_studentId: { moduleId: session.moduleId, studentId: device.studentId } } }),
@@ -295,16 +332,23 @@ export async function checkIn(device: CheckinDevice, input: z.infer<typeof Check
       endsAtMs: session.endsAt.getTime(),
       opensBeforeMin: session.opensBeforeMin,
       lateAfterMin: session.lateAfterMin,
-      expectedSsid: session.expectedSsid,
       isExperiment: session.isExperiment,
     },
-    enforceWifi: window.enforceWifi,
-    ssid: base.ssid,
+    requireBeacon: window.requireBeacon,
+    beaconOk: beacon.ok,
     alreadyMarked: !!mark,
   });
 
   return save(
-    { ...base, ...tokenFields, id: input.attemptId, verdict: decision.verdict, wifiOk: decision.wifiOk },
+    {
+      ...base,
+      ...tokenFields,
+      id: input.attemptId,
+      verdict: decision.verdict,
+      beaconOk: beacon.ok,
+      beaconRssi: beacon.rssi,
+      beaconAgeMs: beacon.ageMs,
+    },
     decision.attendance ? { sessionId: session.id, status: decision.attendance } : undefined,
   );
 }
@@ -318,7 +362,6 @@ export const AttemptUpload = ClientFields.extend({
   reason: z.string().max(200).nullish(),
   /** The code that was decoded, if any: links the attempt to its window and seq. */
   token: z.string().max(200).nullish(),
-  ssid: z.string().max(64).nullish(),
 });
 
 export const AttemptUploadBody = z.object({ attempts: z.array(AttemptUpload).max(500) });
@@ -364,7 +407,6 @@ export async function uploadAttempts(device: { id: string; studentId: string | n
         androidSdk: a.androidSdk ?? device.androidSdk,
         deviceId: device.id,
         studentId: device.studentId,
-        ssid: a.ssid == null ? null : normaliseSsid(a.ssid),
         verdict: a.verdict,
         reason: a.reason ?? null,
       },

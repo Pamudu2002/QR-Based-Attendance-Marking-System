@@ -20,16 +20,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.QrCode2
-import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,15 +46,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
+import lk.cse.attendance.BuildConfig
 import lk.cse.attendance.MainActivity
+import lk.cse.attendance.data.BeaconListener
 import lk.cse.attendance.data.Session
 import lk.cse.attendance.security.AuthCancelledException
 import lk.cse.attendance.security.NoScreenLockException
 import lk.cse.attendance.ui.theme.Lumora
+import lk.cse.attendance.ui.theme.MonoText
 
 /** Welcome / setup (design/screens/AppWelcome.dc.html). */
 @Composable
@@ -61,17 +68,19 @@ fun SetupScreen(session: Session, activity: MainActivity, onDone: () -> Unit) {
     fun granted(p: String) = ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
 
     var camera by remember { mutableStateOf(granted(Manifest.permission.CAMERA)) }
-    // The Wi-Fi name needs location from Android 8.1 (PLAN §6.5); before that it's free.
-    val wifiNeedsLocation = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
-    var location by remember { mutableStateOf(!wifiNeedsLocation || granted(Manifest.permission.ACCESS_FINE_LOCATION) || granted(Manifest.permission.ACCESS_COARSE_LOCATION)) }
+    // Bluetooth for the classroom beacon (PLAN §6.5): "Nearby devices" on Android 12+, location before that.
+    val bluetoothNeedsLocation = Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+    var bluetooth by remember { mutableStateOf(BeaconListener.hasPermission(context)) }
     var keyCreated by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var noScreenLock by remember { mutableStateOf(false) }
+    var server by remember { mutableStateOf(session.prefs.serverUrl) }
+    var editServer by remember { mutableStateOf(false) }
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { camera = it }
-    val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { r ->
-        location = r.values.any { it }
+    val bluetoothLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        bluetooth = BeaconListener.hasPermission(context)
     }
 
     fun continueSetup() {
@@ -143,15 +152,13 @@ fun SetupScreen(session: Session, activity: MainActivity, onDone: () -> Unit) {
             }
             HorizontalDivider(color = Lumora.colors.line)
             SetupRow(
-                Icons.Outlined.Wifi,
-                "Wi-Fi name",
-                if (wifiNeedsLocation) "Android asks for location to share it" else "No extra permission needed",
-                done = location,
-                doneText = if (wifiNeedsLocation) "Allowed" else "Ready",
+                Icons.Outlined.Bluetooth,
+                "Bluetooth",
+                if (bluetoothNeedsLocation) "To find the classroom beacon. Android asks for location to use it" else "To find the classroom beacon",
+                done = bluetooth,
+                doneText = "Allowed",
             ) {
-                TextButton(onClick = {
-                    locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
-                }) { Text("Allow") }
+                TextButton(onClick = { bluetoothLauncher.launch(BeaconListener.permissions()) }) { Text("Allow") }
             }
         }
 
@@ -171,6 +178,46 @@ fun SetupScreen(session: Session, activity: MainActivity, onDone: () -> Unit) {
             color = Lumora.colors.inkMuted,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
+        )
+
+        // Setup already talks to the server, so it has to be changeable here (e.g. a laptop on the same Wi-Fi).
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Server", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted)
+                Text(server, style = MonoText, color = Lumora.colors.inkMuted)
+            }
+            TextButton(onClick = { editServer = true }, enabled = !busy) { Text("Change") }
+        }
+    }
+
+    if (editServer) {
+        var draft by remember { mutableStateOf(server) }
+        AlertDialog(
+            onDismissRequest = { editServer = false },
+            title = { Text("Change server") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("For testing on a laptop, use http://<laptop IP>:3000 on the same Wi-Fi.", style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
+                    OutlinedTextField(
+                        value = draft,
+                        onValueChange = { draft = it },
+                        singleLine = true,
+                        textStyle = MonoText,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    TextButton(onClick = { draft = BuildConfig.SERVER_URL }) { Text("Use default") }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    session.prefs.serverUrl = draft
+                    server = session.prefs.serverUrl
+                    error = null
+                    editServer = false
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { editServer = false }) { Text("Cancel") } },
         )
     }
 }

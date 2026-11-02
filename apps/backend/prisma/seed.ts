@@ -128,7 +128,6 @@ async function main() {
           startsAt,
           endsAt: zonedToUtc(date, s.end),
           venue: s.venue,
-          expectedSsid: "UniWiFi",
           seriesId: `seed-${s.mod.code}`,
         },
       });

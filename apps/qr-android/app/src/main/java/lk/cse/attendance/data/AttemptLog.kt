@@ -9,6 +9,8 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Upsert
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -41,7 +43,9 @@ data class AttemptEntity(
     val totalMs: Double? = null,
     val authMethod: String? = null,
     val androidSdk: Int,
-    val ssid: String? = null,
+    /** Strongest classroom beacon heard (dBm), and the server's verdict on it (PLAN §6.5). */
+    val beaconRssi: Int? = null,
+    val beaconOk: Boolean? = null,
 
     /** Server verdict, or NO_DECODE / CANCELLED / NETWORK_ERROR / PENDING decided on the phone. */
     val verdict: String,
@@ -76,12 +80,39 @@ interface AttemptDao {
     suspend fun markUploaded(ids: List<String>)
 }
 
-@Database(entities = [AttemptEntity::class], version = 1, exportSchema = false)
+@Database(entities = [AttemptEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun attempts(): AttemptDao
 
     companion object {
+        // Migrations keep the log: unsent attempts must survive an app update.
+
+        /** v2 added the Wi-Fi router address (since removed). */
+        private val V1_TO_V2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE attempts ADD COLUMN bssid TEXT")
+            }
+        }
+
+        /** v3 drops the Wi-Fi columns and adds the classroom beacon (PLAN §6.5). SQLite rebuilds the table. */
+        private val V2_TO_V3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `attempts_new` (`id` TEXT NOT NULL, `createdAtMs` INTEGER NOT NULL, `token` TEXT, " +
+                        "`phoneLabel` TEXT, `distanceRow` TEXT, `distanceM` REAL, `role` TEXT, `runNo` INTEGER, `attemptNo` INTEGER, " +
+                        "`firstFrameMs` REAL, `decodeMs` REAL, `framesProcessed` INTEGER, `framesDropped` INTEGER, `biometricMs` REAL, " +
+                        "`postRttMs` REAL, `totalMs` REAL, `authMethod` TEXT, `androidSdk` INTEGER NOT NULL, `beaconRssi` INTEGER, " +
+                        "`beaconOk` INTEGER, `verdict` TEXT NOT NULL, `attendance` TEXT, `reason` TEXT, `tokenAgeMs` INTEGER, `seq` INTEGER, " +
+                        "`sentToServer` INTEGER NOT NULL, `uploaded` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+                )
+                val cols = "`id`, `createdAtMs`, `token`, `phoneLabel`, `distanceRow`, `distanceM`, `role`, `runNo`, `attemptNo`, `firstFrameMs`, `decodeMs`, `framesProcessed`, `framesDropped`, `biometricMs`, `postRttMs`, `totalMs`, `authMethod`, `androidSdk`, `verdict`, `attendance`, `reason`, `tokenAgeMs`, `seq`, `sentToServer`, `uploaded`"
+                db.execSQL("INSERT INTO `attempts_new` ($cols) SELECT $cols FROM `attempts`")
+                db.execSQL("DROP TABLE `attempts`")
+                db.execSQL("ALTER TABLE `attempts_new` RENAME TO `attempts`")
+            }
+        }
+
         fun create(context: Context) =
-            Room.databaseBuilder(context, AppDatabase::class.java, "cse_attendance.db").build()
+            Room.databaseBuilder(context, AppDatabase::class.java, "cse_attendance.db").addMigrations(V1_TO_V2, V2_TO_V3).build()
     }
 }

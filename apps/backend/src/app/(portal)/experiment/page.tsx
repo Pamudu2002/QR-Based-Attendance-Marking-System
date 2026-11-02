@@ -20,19 +20,23 @@ export default async function ExperimentPage() {
     orderBy: { startsAt: "desc" },
     include: {
       module: { select: { intake: true, semester: true, code: true } },
-      windows: { orderBy: { startedAt: "desc" }, select: { id: true, intervalSec: true, mode: true, label: true, enforceWifi: true, startedAt: true, endedAt: true } },
+      windows: { orderBy: { startedAt: "desc" }, select: { id: true, intervalSec: true, mode: true, label: true, startedAt: true, endedAt: true } },
     },
   });
   const windowIds = sessions.flatMap((se) => se.windows.map((w) => w.id));
-  const counts = windowIds.length
-    ? await db.attempt.groupBy({ by: ["windowId", "verdict"], where: { windowId: { in: windowIds } }, _count: { _all: true } })
-    : [];
+  const [counts, heard] = windowIds.length
+    ? await Promise.all([
+        db.attempt.groupBy({ by: ["windowId", "verdict"], where: { windowId: { in: windowIds } }, _count: { _all: true } }),
+        db.attempt.groupBy({ by: ["windowId"], where: { windowId: { in: windowIds }, beaconOk: true }, _count: { _all: true } }),
+      ])
+    : [[], []];
   const countFor = (id: string) => {
     const rows = counts.filter((c) => c.windowId === id);
     return {
       total: rows.reduce((n, r) => n + r._count._all, 0),
       ok: rows.find((r) => r.verdict === "OK")?._count._all ?? 0,
       expired: rows.find((r) => r.verdict === "EXPIRED")?._count._all ?? 0,
+      beacon: heard.find((h) => h.windowId === id)?._count._all ?? 0,
     };
   };
   const unlinked = await db.attempt.count({
@@ -57,8 +61,8 @@ export default async function ExperimentPage() {
         <div className="lu-notice lu-notice--info" style={{ maxWidth: "none" }}>
           <Info {...ico} />
           <span>
-            Add a session with <b>Experiment session</b> ticked (Sessions → Check-in rules), then open it and start a run with T = 5, 10 or 20 s. Genuine runs
-            check the Wi-Fi name; relay runs don&apos;t, so the interval alone decides. The export has no names or index numbers: phones and students
+            Add a session with <b>Experiment session</b> ticked (Sessions → Check-in rules), then open it and start a run with T = 5, 10 or 20 s. Runs record whether
+            the phone heard the classroom beacon but never require it, so the interval alone decides. The export has no names or index numbers: phones and students
             are pseudonymised.
           </span>
         </div>
@@ -82,7 +86,6 @@ export default async function ExperimentPage() {
                   </span>
                   <span className={`${s.small} ${s.muted}`}>
                     {formatDay(se.startsAt)} {formatTime(se.startsAt)}–{formatTime(se.endsAt)} · {se.venue}
-                    {se.expectedSsid ? ` · Wi-Fi ${se.expectedSsid}` : " · no Wi-Fi name set"}
                   </span>
                 </span>
                 <Link className="lu-btn lu-btn--sm" href={`/sessions/${se.id}`}>
@@ -97,7 +100,7 @@ export default async function ExperimentPage() {
                       <th>T</th>
                       <th>Run type</th>
                       <th>Label</th>
-                      <th>Wi-Fi</th>
+                      <th className={s.right}>Beacon heard</th>
                       <th className={s.right}>Attempts</th>
                       <th className={s.right}>Accepted</th>
                       <th className={s.right}>Expired</th>
@@ -121,7 +124,7 @@ export default async function ExperimentPage() {
                           <td className={s.mono}>{w.intervalSec} s</td>
                           <td>{MODE[w.mode]}</td>
                           <td className={s.muted}>{w.label ?? "–"}</td>
-                          <td className={s.muted}>{w.enforceWifi ? "Checked" : "Logged only"}</td>
+                          <td className={s.right}>{c.beacon}</td>
                           <td className={s.right}>{c.total}</td>
                           <td className={s.right}>{c.ok}</td>
                           <td className={s.right}>{c.expired}</td>

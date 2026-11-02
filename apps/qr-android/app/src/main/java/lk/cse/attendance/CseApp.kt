@@ -3,6 +3,7 @@ package lk.cse.attendance
 import android.app.Application
 import lk.cse.attendance.data.Api
 import lk.cse.attendance.data.AppDatabase
+import lk.cse.attendance.data.BeaconListener
 import lk.cse.attendance.data.CheckIns
 import lk.cse.attendance.data.Prefs
 import lk.cse.attendance.data.Session
@@ -21,6 +22,6 @@ class CseApp : Application() {
         val prefs = Prefs(this)
         session = Session(this, prefs, Api(prefs))
         db = AppDatabase.create(this)
-        checkIns = CheckIns(session, db.attempts())
+        checkIns = CheckIns(session, db.attempts(), BeaconListener(this))
     }
 }

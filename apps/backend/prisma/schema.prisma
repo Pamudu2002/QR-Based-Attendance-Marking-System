@@ -21,6 +21,30 @@ model Lecturer {
 
   modules       Module[]
   refreshTokens RefreshToken[]
+  beaconPhones  BeaconPhone[]
+}
+
+/// A lecturer's Android phone running CSE Attendance Beacon (PLAN §6.5). It
+/// broadcasts the classroom beacon for the lecturer's open check-in run.
+model BeaconPhone {
+  id           String    @id @default(cuid())
+  lecturerId   String
+  /// X.509 SubjectPublicKeyInfo DER, base64 (Keystore key, no user auth: it runs unattended)
+  publicKey    String
+  keyLevel     KeyLevel
+  model        String
+  manufacturer String
+  androidSdk   Int
+  /// The link code it was paired with; unique, so a code works once
+  pairingId    String    @unique
+  createdAt    DateTime  @default(now())
+  /// Last poll of /beacon/current, and what the phone reported then
+  lastSeenAt   DateTime?
+  lastState    String?
+
+  lecturer Lecturer @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+
+  @@index([lecturerId])
 }
 
 /// Opaque refresh token, stored hashed. Rotated on every use; reusing a
@@ -178,7 +202,6 @@ model Session {
   venue          String
   opensBeforeMin Int      @default(15)
   lateAfterMin   Int      @default(15)
-  expectedSsid   String?
   isExperiment   Boolean  @default(false)
   /// Shared by sessions created together with "Repeat every week"
   seriesId       String?
@@ -203,7 +226,8 @@ model CheckinWindow {
   intervalSec Int
   graceSec    Int        @default(2)
   secret      String
-  enforceWifi Boolean    @default(true)
+  /// Check-ins must include this run's classroom beacon (PLAN §6.5)
+  requireBeacon Boolean  @default(false)
   mode        WindowMode @default(NORMAL)
   label       String?
   startedAt   DateTime   @default(now())
@@ -252,7 +276,10 @@ enum AttemptVerdict {
   EXPIRED
   BAD_TOKEN
   BAD_SIGNATURE
+  /// Legacy (Wi-Fi check, removed); kept so old rows stay valid
   WRONG_NETWORK
+  /// The run requires the classroom beacon and the phone didn't hear a current one
+  NO_BEACON
   UNKNOWN_DEVICE
   DEVICE_REVOKED
   NOT_REGISTERED
@@ -297,8 +324,12 @@ model Attempt {
   receivedAt      DateTime?
   tokenAgeMs      Int?
 
-  ssid            String?
-  wifiOk          Boolean?
+  /// Classroom beacon: valid code for this run heard (null = no beacon reported)
+  beaconOk        Boolean?
+  /// Signal strength of the best valid code (dBm)
+  beaconRssi      Int?
+  /// Code age when the check-in arrived: receivedAt − code issued (server clock)
+  beaconAgeMs     Int?
   verdict         AttemptVerdict
   reason          String?
   createdAt       DateTime       @default(now())

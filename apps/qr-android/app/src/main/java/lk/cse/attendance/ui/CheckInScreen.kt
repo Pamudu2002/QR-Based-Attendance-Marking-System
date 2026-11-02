@@ -184,11 +184,11 @@ private fun ResultView(
             Detail("Frames read", "${o.timings.framesProcessed}")
         }
         Row(Modifier.fillMaxWidth().padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Wi-Fi", style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted, modifier = Modifier.weight(1f))
-            when (r.wifiOk) {
-                true -> StatusBadge("Class Wi-Fi", Tone.Success, Icons.Outlined.Check)
-                false -> StatusBadge("Not the class Wi-Fi", Tone.Warning)
-                null -> Text("Not checked", style = MaterialTheme.typography.bodyMedium)
+            Text("Classroom beacon", style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted, modifier = Modifier.weight(1f))
+            when (r.beaconOk) {
+                true -> StatusBadge("Heard", Tone.Success, Icons.Outlined.Check)
+                false -> StatusBadge("Not current", Tone.Warning)
+                null -> Text("Not heard", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
@@ -224,7 +224,7 @@ private fun verdictLabel(v: String) = when (v) {
     "EXPIRED" -> "Code expired"
     "BAD_TOKEN" -> "Not a class code"
     "BAD_SIGNATURE" -> "Phone not verified"
-    "WRONG_NETWORK" -> "Wrong Wi-Fi"
+    "NO_BEACON" -> "Beacon not found"
     "UNKNOWN_DEVICE" -> "Not registered"
     "DEVICE_REVOKED" -> "Phone was reset"
     "NOT_REGISTERED" -> "Not registered"

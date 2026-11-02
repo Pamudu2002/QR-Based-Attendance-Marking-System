@@ -7,6 +7,9 @@ export const signedMessage = {
   login: (deviceId: string, nonce: string) => ["QRv1-LOGIN", deviceId, nonce].join("|"),
   registration: (token: string, deviceId: string, indexNumber: string) => ["QRv1-REG", token, deviceId, indexNumber].join("|"),
   checkin: (token: string, deviceId: string, attemptId: string) => ["QRv1-CHK", token, deviceId, attemptId].join("|"),
+  // Beacon phone (CSE Attendance Beacon): its key has no user auth, it runs unattended.
+  beaconLink: (code: string) => ["QRv1-BEACON-LINK", code].join("|"),
+  beaconLogin: (beaconId: string, nonce: string) => ["QRv1-BEACON-LOGIN", beaconId, nonce].join("|"),
 };
 
 function decodeBase64(b64: string): Buffer {

@@ -1,8 +1,11 @@
 package lk.cse.attendance.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.SystemClock
+import android.provider.Settings
 import android.util.Size
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -41,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,8 +61,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.util.concurrent.Executors
 import kotlinx.coroutines.delay
 import lk.cse.attendance.core.QrPayload
+import lk.cse.attendance.data.BeaconListener
 import lk.cse.attendance.data.DecodedScan
-import lk.cse.attendance.data.WifiReader
 import lk.cse.attendance.scan.ScanStats
 import lk.cse.attendance.scan.QrAnalyzer
 import lk.cse.attendance.ui.theme.Lumora
@@ -71,6 +75,8 @@ import lk.cse.attendance.ui.theme.MonoText
  * with the timings from Scan pressed (t0) to the first decode (t1).
  *
  * @param checkIns false for the registration re-scan: only registration codes, nothing logged.
+ * @param beacon listens for the classroom beacon while the camera reads the code (PLAN §6.5);
+ *   the check-in stops it once it has sent what was heard.
  */
 @Composable
 fun ScannerScreen(
@@ -79,8 +85,9 @@ fun ScannerScreen(
     onClose: () -> Unit,
     onRegistrationCode: (token: String, decodedNanos: Long) -> Unit,
     onCheckInCode: (DecodedScan) -> Unit,
-    onNoDecode: (t0Nanos: Long, stats: ScanStats, ssid: String?) -> Unit,
-    onClosedEarly: (t0Nanos: Long, stats: ScanStats, ssid: String?) -> Unit,
+    onNoDecode: (t0Nanos: Long, stats: ScanStats) -> Unit,
+    onClosedEarly: (t0Nanos: Long, stats: ScanStats) -> Unit,
+    beacon: BeaconListener? = null,
 ) {
     val context = LocalContext.current
     var hasCamera by remember {
@@ -96,12 +103,23 @@ fun ScannerScreen(
     var decoded by remember { mutableStateOf(false) }
     var torch by remember { mutableStateOf(false) }
     var camera by remember { mutableStateOf<Camera?>(null) }
-    var wifi by remember { mutableStateOf<WifiReader.Reading?>(null) }
     // t0: Scan pressed (or Try again). Monotonic clock only.
     val startedNanos = remember(attempt) { SystemClock.elapsedRealtimeNanos() }
     val timeoutMs = timeoutSec * 1000L
 
-    LaunchedEffect(Unit) { if (checkIns) wifi = WifiReader.read(context) }
+    val listening = checkIns && beacon != null
+    val beaconStatus = beacon?.status?.collectAsState()?.value
+    val beaconPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { beacon?.start() }
+    // Start listening, and retry while something is missing (e.g. back from turning Bluetooth on).
+    LaunchedEffect(listening) {
+        if (!listening) return@LaunchedEffect
+        beacon!!.start()
+        while (true) {
+            delay(2000)
+            val st = beacon.status.value
+            if (st != BeaconListener.Status.SCANNING && st != BeaconListener.Status.HEARD) beacon.start()
+        }
+    }
 
     val analyzer = remember(attempt) {
         QrAnalyzer(
@@ -115,7 +133,7 @@ fun ScannerScreen(
                         }
                         is QrPayload.CheckIn -> if (checkIns) {
                             decoded = true
-                            onCheckInCode(DecodedScan(payload.token, startedNanos, stats, wifi?.ssid))
+                            onCheckInCode(DecodedScan(payload.token, startedNanos, stats))
                         } else {
                             message = "That's a check-in code. Scan the registration code on the projector."
                             attempt++
@@ -132,7 +150,8 @@ fun ScannerScreen(
     fun statsNow() = ScanStats(analyzer.framesProcessed, analyzer.framesDropped, analyzer.firstFrameNanos, 0L)
 
     fun close() {
-        if (checkIns && !decoded && !timedOut) onClosedEarly(startedNanos, statsNow(), wifi?.ssid)
+        if (checkIns && !decoded && !timedOut) onClosedEarly(startedNanos, statsNow())
+        if (!decoded) beacon?.stop()
         onClose()
     }
     BackHandler { close() }
@@ -189,7 +208,7 @@ fun ScannerScreen(
                         if (ms >= timeoutMs) {
                             timedOut = true
                             analyzer.pause()
-                            if (checkIns) onNoDecode(startedNanos, statsNow(), wifi?.ssid)
+                            if (checkIns) onNoDecode(startedNanos, statsNow())
                             break
                         }
                     }
@@ -203,14 +222,16 @@ fun ScannerScreen(
                         Text("$elapsedSec s", style = MonoText, color = Lumora.colors.inkMuted)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Bottom) {
-                        if (checkIns) {
+                        if (listening) {
                             Column(Modifier.weight(1f)) {
-                                Text("Wi-Fi", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted)
-                                val w = wifi
-                                when {
-                                    w == null -> Text("Reading…", style = MonoText)
-                                    w.ssid != WifiReader.UNKNOWN -> StatusBadge(w.ssid, Tone.Success)
-                                    else -> StatusBadge(if (w.locationOff) "Turn on location" else "Unknown", Tone.Warning)
+                                Text("Classroom beacon", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted)
+                                when (beaconStatus) {
+                                    BeaconListener.Status.HEARD -> StatusBadge("Found", Tone.Success)
+                                    BeaconListener.Status.SCANNING, null -> Text("Looking…", style = MonoText)
+                                    BeaconListener.Status.BLUETOOTH_OFF -> StatusBadge("Bluetooth off", Tone.Warning)
+                                    BeaconListener.Status.NO_PERMISSION -> StatusBadge("Not allowed", Tone.Warning)
+                                    BeaconListener.Status.LOCATION_OFF -> StatusBadge("Location off", Tone.Warning)
+                                    BeaconListener.Status.NO_BLUETOOTH -> StatusBadge("No Bluetooth", Tone.Warning)
                                 }
                             }
                         }
@@ -223,7 +244,25 @@ fun ScannerScreen(
                             Text("${(timeoutSec - elapsedSec).coerceAtLeast(0)} s", style = MonoText)
                         }
                     }
-                    message?.let { Notice(Tone.Warning, it) } ?: Notice(Tone.Tip, "sitting far back? Move a little closer.", lead = "Tip:")
+                    when {
+                        message != null -> Notice(Tone.Warning, message!!)
+                        listening && beaconStatus == BeaconListener.Status.BLUETOOTH_OFF ->
+                            Notice(Tone.Warning, "Your class checks that you're in the room with Bluetooth.", lead = "Turn on Bluetooth.") {
+                                SecondaryButton("Open Bluetooth settings", onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) })
+                            }
+                        listening && beaconStatus == BeaconListener.Status.NO_PERMISSION ->
+                            Notice(
+                                Tone.Warning,
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) "Allow Nearby devices so the app can find the classroom beacon." else "Allow location so the app can find the classroom beacon. Android needs it for Bluetooth.",
+                            ) {
+                                SecondaryButton("Allow", onClick = { beaconPermission.launch(BeaconListener.permissions()) })
+                            }
+                        listening && beaconStatus == BeaconListener.Status.LOCATION_OFF ->
+                            Notice(Tone.Warning, "On this Android version, Bluetooth scans need location switched on.", lead = "Turn on location.") {
+                                SecondaryButton("Open location settings", onClick = { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) })
+                            }
+                        else -> Notice(Tone.Tip, "sitting far back? Move a little closer.", lead = "Tip:")
+                    }
                 }
                 SecondaryButton("Cancel", onClick = ::close, modifier = Modifier.fillMaxWidth())
             }
@@ -236,7 +275,7 @@ fun ScannerScreen(
  * YUV_420_888 (CLAUDE.md, Android conventions).
  */
 @Composable
-private fun CameraPreview(analyzer: QrAnalyzer, onCamera: (Camera) -> Unit, paused: Boolean) {
+internal fun CameraPreview(analyzer: QrAnalyzer, onCamera: (Camera) -> Unit, paused: Boolean) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember { PreviewView(context).apply { scaleType = PreviewView.ScaleType.FILL_CENTER } }

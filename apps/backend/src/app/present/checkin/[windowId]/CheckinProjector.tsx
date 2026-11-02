@@ -17,6 +17,7 @@ type Live = {
   rejected: number;
   attempts: number;
   accepted: number;
+  beacon: { required: boolean };
 };
 
 export function CheckinProjector(props: {
@@ -78,7 +79,11 @@ export function CheckinProjector(props: {
       badge={props.badge}
       headline="Scan to check in"
       lead={props.lead}
-      steps={["Open CSE Attendance and tap Scan", "Point your camera at this code", "Confirm with your fingerprint or PIN"]}
+      steps={[
+        live?.beacon.required ? "Turn on Bluetooth, open CSE Attendance and tap Scan" : "Open CSE Attendance and tap Scan",
+        "Point your camera at this code",
+        "Confirm with your fingerprint or PIN",
+      ]}
       counter={
         <>
           <div className={s.counterHead}>

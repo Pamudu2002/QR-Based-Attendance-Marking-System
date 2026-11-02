@@ -13,12 +13,6 @@ const SessionFields = z.object({
   venue: z.string().trim().min(1, "Enter the venue.").max(120),
   opensBeforeMin: z.number().int().min(0).max(120).default(15),
   lateAfterMin: z.number().int().min(0).max(240).default(15),
-  expectedSsid: z
-    .string()
-    .trim()
-    .max(64)
-    .nullish()
-    .transform((s) => s || null),
   isExperiment: z.boolean().default(false),
 });
 
@@ -88,7 +82,6 @@ export async function listSessions(lecturerId: string, opts: { moduleId?: string
       venue: true,
       opensBeforeMin: true,
       lateAfterMin: true,
-      expectedSsid: true,
       isExperiment: true,
       seriesId: true,
       module: { select: { intake: true, semester: true, code: true, name: true } },

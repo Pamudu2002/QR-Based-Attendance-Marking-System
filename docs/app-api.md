@@ -112,7 +112,8 @@ Times are ISO 8601 UTC; show them in the phone's timezone.
 After decoding `QA1:C:…`, the fingerprint/PIN prompt, and signing `QRv1-CHK|token|deviceId|attemptId`:
 
 ```json
-{ "token": "QA1:C:…", "attemptId": "uuid-v4 made by the phone", "signature": "MEUCIQ…", "ssid": "UniWiFi",
+{ "token": "QA1:C:…", "attemptId": "uuid-v4 made by the phone", "signature": "MEUCIQ…",
+  "beacons": [{ "data": "Q0EBAAAAB/XAfS7oIXXX", "rssi": -64, "heardAgoMs": 412.5 }],
   "decodeMs": 1820.4, "firstFrameMs": 310.2, "framesProcessed": 14, "framesDropped": 3, "biometricMs": 1104.9,
   "authMethod": "BIOMETRIC", "androidSdk": 34,
   "phoneLabel": "P1-lowend", "distanceRow": "MIDDLE", "distanceM": 8, "role": "GENUINE", "runNo": 2, "attemptNo": 3 }
@@ -121,12 +122,13 @@ After decoding `QA1:C:…`, the fingerprint/PIN prompt, and signing `QRv1-CHK|to
 - Timings are milliseconds from `SystemClock.elapsedRealtimeNanos()` (PLAN §5.2): `firstFrameMs` and `decodeMs` from Scan pressed (t0), `biometricMs` = t2 − t1. Labels only in experiment mode. `distanceRow`: `FRONT` / `MIDDLE` / `BACK`; `role`: `GENUINE` / `RELAY`.
 - **Token age is measured on the server clock only**, from the moment the request arrives. Refresh the access token *before* signing (the app does this when it has under a minute left), so a 401 retry can't add delay.
 - The same `attemptId` sent again returns the stored result; the server keeps one record. Use this for "Send again" after no reply.
+- `beacons`: classroom beacon codes heard while scanning (PLAN §6.5), strongest first, at most 5 from the last 30 s. `data` is the 15-byte manufacturer data (company ID 0xFFFF) in base64. Leave the field out if nothing was heard. It isn't part of the signed message.
 
 Always `200` with a verdict (unless the access token is missing or the body is malformed):
 
 ```json
 { "attemptId", "verdict": "OK", "attendance": "PRESENT", "message": "You're checked in.",
-  "tokenAgeMs": 2412, "seq": 131, "issuedAt", "receivedAt", "serverTime", "wifiOk": true,
+  "tokenAgeMs": 2412, "seq": 131, "issuedAt", "receivedAt", "serverTime", "beaconOk": true,
   "windowId", "intervalSec": 10, "graceSec": 2,
   "session": { "id", "title", "startsAt", "endsAt", "venue" }, "module": { "id", "code", "displayName" },
   "summary": { "attended": 9, "pastSessions": 9, "attendancePct": 100 } }
@@ -138,11 +140,13 @@ Always `200` with a verdict (unless the access token is missing or the body is m
 | `EXPIRED` | Token age over (T + grace) × 1000 ms, or the run had ended |
 | `BAD_TOKEN` | Not a valid check-in code (forged, wrong purpose, or from the future) |
 | `BAD_SIGNATURE` | Signature doesn't match this phone's key |
-| `WRONG_NETWORK` | The session's Wi-Fi name is enforced and `ssid` doesn't match (`UNKNOWN` never matches) |
+| `NO_BEACON` | The run requires the classroom beacon and no current code for it was sent (PLAN §6.5). `beaconOk`: false = codes sent but none valid or current, null = none sent |
 | `UNKNOWN_DEVICE` / `DEVICE_REVOKED` | Phone not registered yet / reset by the lecturer |
 | `NOT_REGISTERED` | Not registered for this session's module |
 | `OUTSIDE_TIME` | Before `startsAt − opensBeforeMin` or after `endsAt` |
 | `DUPLICATE` | Already marked for this session (normal classes) |
+
+`beaconOk` is reported for every check-in (true / false / null), also when the run doesn't require the beacon (experiment runs record it only).
 
 ## 6. Upload the log: `POST /attempts/bulk` (auth)
 
@@ -153,6 +157,22 @@ Every attempt is saved in Room first. Afterwards the phone sends `{ "attempts": 
 
 → `{ "saved": [ids], "rejected": [{ "id", "reason" }] }`. Mark the saved ones as uploaded.
 
+## 7. Beacon app (CSE Attendance Beacon, the lecturer's phone)
+
+Its own Keystore key (EC P-256, **no user authentication**: it runs unattended).
+
+1. **Link:** the lecturer shows a one-time code in the portal (Beacon phones → Show link code), `QA1:B:<code>`, valid 2 minutes. `POST /beacon/link`
+   `{ "code": "QA1:B:…", "publicKey", "keyLevel", "model", "manufacturer", "androidSdk", "signature" }` with the signature over `QRv1-BEACON-LINK|<code without QA1:B:>` → `201 { "beaconId", "lecturer" }`. A code works once (`409 LINK_CODE_USED`).
+2. **Login:** `POST /beacon/auth/challenge { "beaconId" }` → `{ "nonce" }`; `POST /beacon/auth/verify { "beaconId", "nonce", "signature" }` over `QRv1-BEACON-LOGIN|beaconId|nonce` → `{ "accessToken", "expiresInSec": 900 }`. No refresh token: sign a new challenge when it runs out.
+3. **Poll every 2 s:** `GET /beacon/current?state=waiting|broadcasting|bluetooth_off|no_permission|cant_broadcast` (Bearer) →
+   ```json
+   { "serverTime", "lecturer": "Dr. N. Ranasinghe",
+     "run": { "windowId", "key": "<base64, 32 bytes>", "startedAt", "rotateSec": 5, "mode": "NORMAL", "requireBeacon": true,
+              "session": { "title", "venue" }, "module": { "code", "displayName" } } }
+   ```
+   `run` is null when no check-in is open. While it isn't, stop broadcasting. `401 UNLINKED` means the lecturer removed this phone.
+4. **Broadcast:** manufacturer data under company ID `0xFFFF`: `"CA" | 0x01 | seq (4, big-endian) | HMAC-SHA256(key, "B" | seq)[0..8]`, with `seq = floor((server now − startedAt) / 5 s)`. Server now = `serverTime` + monotonic time since the poll. Non-connectable, no device name.
+
 ## Testing without the app
 
 `apps/backend/scripts/sim-phone.ts` does exactly the above with a software key:
@@ -160,7 +180,11 @@ Every attempt is saved in Room first. Afterwards the phone sends `{ "attempts": 
 ```bash
 pnpm --filter @attendance/backend sim:phone register --module <moduleId> --lecturer demo@uom.lk:demo-pass-2026 --index 220512P --name "Jayasinghe R. T."
 pnpm --filter @attendance/backend sim:phone me
-pnpm --filter @attendance/backend sim:phone checkin --window <windowId> --lecturer demo@uom.lk:demo-pass-2026 --ssid UniWiFi
+pnpm --filter @attendance/backend sim:phone checkin --window <windowId> --lecturer demo@uom.lk:demo-pass-2026
+# A simulated beacon phone, and check-ins that heard it (current, or an old code):
+pnpm --filter @attendance/backend sim:phone beacon-link --lecturer demo@uom.lk:demo-pass-2026
+pnpm --filter @attendance/backend sim:phone beacon-status --state waiting
+pnpm --filter @attendance/backend sim:phone checkin --window <windowId> --lecturer … --beacon [--rssi=-70] [--beacon-age 35000]
 pnpm --filter @attendance/backend sim:phone checkin --window <windowId> --lecturer … --delay 12000   # a screenshot relay
 pnpm --filter @attendance/backend sim:phone nodecode --label P1-lowend --run 1 --attempt 4
 ```

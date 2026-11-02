@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Book, Calendar, FlaskConical, LayoutDashboard } from "lucide-react";
+import { Bluetooth, Book, Calendar, FlaskConical, LayoutDashboard } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { ico } from "./icon";
 
@@ -31,6 +31,10 @@ export function SidebarNav({ moduleCount }: { moduleCount: number }) {
       <Link href="/experiment" className={item(path.startsWith("/experiment"))}>
         <FlaskConical {...ico} />
         Experiment
+      </Link>
+      <Link href="/beacons" className={item(path.startsWith("/beacons"))}>
+        <Bluetooth {...ico} />
+        Beacon phones
       </Link>
     </nav>
   );

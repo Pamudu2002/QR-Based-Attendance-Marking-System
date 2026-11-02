@@ -54,8 +54,9 @@ fun AppNav(session: Session, checkIns: CheckIns, dao: AttemptDao, activity: Main
                     checkIns.pending = scan
                     nav.navigate("checkin") { popUpTo("scan?rescan={rescan}") { inclusive = true } }
                 },
-                onNoDecode = { t0, stats, ssid -> scope.launch { checkIns.logNoDecode(t0, stats, ssid, timeoutSec) } },
-                onClosedEarly = { t0, stats, ssid -> scope.launch { checkIns.logScannerClosed(t0, stats, ssid) } },
+                onNoDecode = { t0, stats -> scope.launch { checkIns.logNoDecode(t0, stats, timeoutSec) } },
+                onClosedEarly = { t0, stats -> scope.launch { checkIns.logScannerClosed(t0, stats) } },
+                beacon = if (rescan) null else checkIns.beacon,
                 onRegistrationCode = { token, decodedNanos ->
                     if (rescan) {
                         nav.previousBackStackEntry?.savedStateHandle?.set(RESCAN_RESULT, "$token:$decodedNanos")

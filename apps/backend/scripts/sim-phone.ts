@@ -5,11 +5,17 @@
 //   pnpm --filter @attendance/backend sim:phone register --module <id> --lecturer demo@uom.lk:demo-pass-2026 --index …
 //   pnpm --filter @attendance/backend sim:phone me
 //   pnpm --filter @attendance/backend sim:phone checkin --window <id> --lecturer demo@uom.lk:demo-pass-2026 [--delay 12000]
-//       [--ssid UniWiFi] [--label P1-lowend --row FRONT --distance 3 --role GENUINE --run 1 --attempt 1]
+//       [--beacon [--beacon-age 40000] [--rssi -70]] [--label P1-lowend --row FRONT --distance 3 --role GENUINE --run 1 --attempt 1]
 //   pnpm --filter @attendance/backend sim:phone nodecode [--label …]     (logs a NO_DECODE attempt)
+//
+// The lecturer's beacon phone (CSE Attendance Beacon), simulated:
+//   pnpm --filter @attendance/backend sim:phone beacon-link --lecturer demo@uom.lk:demo-pass-2026
+//   pnpm --filter @attendance/backend sim:phone beacon-status [--state waiting]   (one poll of /beacon/current)
+// `checkin --beacon` adds what a student phone would hear from it: the current code, or one --beacon-age ms old.
 //
 // Options: --base http://localhost:3000   --phone sim1 (keeps one key per name in .sim-phone-<name>.json)
 import { generateKeyPairSync, sign, createPrivateKey } from "node:crypto";
+import { beaconSeqAt, makeBeaconPayload } from "../src/lib/beacon";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 
@@ -25,7 +31,10 @@ const { values, positionals } = parseArgs({
     name: { type: "string" },
     window: { type: "string" },
     delay: { type: "string" },
-    ssid: { type: "string" },
+    beacon: { type: "boolean", default: false },
+    "beacon-age": { type: "string" },
+    rssi: { type: "string" },
+    state: { type: "string" },
     label: { type: "string" },
     row: { type: "string" },
     distance: { type: "string" },
@@ -90,12 +99,64 @@ async function login(state: State): Promise<string> {
 async function projectorPayload(path: string | null): Promise<string> {
   if (values.payload) return values.payload;
   if (!path || !values.lecturer) throw new Error("Pass --payload, or --module/--window and --lecturer email:password.");
-  const [email, password] = values.lecturer.split(":");
-  const { res } = await call("/auth/lecturer/login", { body: { email, password } });
-  const cookie = res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
-  const { data } = await call<{ payload: string; seq: number }>(path, { cookie });
+  const { data } = await call<{ payload: string; seq: number }>(path, { cookie: await lecturerCookie() });
   console.log(`Projector code #${data.seq}: ${data.payload}`);
   return data.payload;
+}
+
+/** Lecturer login cookie for portal calls. */
+async function lecturerCookie(): Promise<string> {
+  if (!values.lecturer) throw new Error("Pass --lecturer email:password.");
+  const [email, password] = values.lecturer.split(":");
+  const { res } = await call("/auth/lecturer/login", { body: { email, password } });
+  return res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
+}
+
+// ── Simulated beacon phone ──────────────────────────────────────────────────
+
+const beaconFile = `.sim-phone-beacon-${values.phone}.json`;
+type BeaconState = { privateKeyPem: string; beaconId: string };
+type BeaconRun = { windowId: string; key: string; startedAt: string; rotateSec: number } | null;
+
+async function beaconLink() {
+  const cookie = await lecturerCookie();
+  const { data: link } = await call<{ qr: string }>("/beacons/link-code", { method: "POST", cookie });
+  const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  const privateKeyPem = privateKey.export({ format: "pem", type: "pkcs8" }).toString();
+  const code = link.qr.replace(/^QA1:B:/, "");
+  const { data } = await call<{ beaconId: string; lecturer: string }>("/beacon/link", {
+    body: {
+      code: link.qr,
+      publicKey: publicKey.export({ format: "der", type: "spki" }).toString("base64"),
+      keyLevel: "SOFTWARE",
+      model: `Simulated beacon ${values.phone}`,
+      manufacturer: "Node",
+      androidSdk: 35,
+      signature: sig(privateKeyPem, `QRv1-BEACON-LINK|${code}`),
+    },
+  });
+  writeFileSync(beaconFile, JSON.stringify({ privateKeyPem, beaconId: data.beaconId }, null, 2));
+  console.log(`Beacon linked to ${data.lecturer}: ${data.beaconId}`);
+}
+
+/** One poll of /beacon/current as the beacon phone. */
+async function beaconPoll(state: string): Promise<{ serverTime: string; run: BeaconRun }> {
+  if (!existsSync(beaconFile)) throw new Error("No simulated beacon yet. Run beacon-link first.");
+  const b: BeaconState = JSON.parse(readFileSync(beaconFile, "utf8"));
+  const { data: ch } = await call<{ nonce: string }>("/beacon/auth/challenge", { body: { beaconId: b.beaconId } });
+  const { data: tok } = await call<{ accessToken: string }>("/beacon/auth/verify", {
+    body: { beaconId: b.beaconId, nonce: ch.nonce, signature: sig(b.privateKeyPem, `QRv1-BEACON-LOGIN|${b.beaconId}|${ch.nonce}`) },
+  });
+  return (await call<{ serverTime: string; run: BeaconRun }>(`/beacon/current?state=${state}`, { token: tok.accessToken })).data;
+}
+
+/** What a student phone hears: the beacon's code for now (or --beacon-age ms ago). */
+async function heardBeacon() {
+  const { serverTime, run } = await beaconPoll("broadcasting");
+  if (!run) throw new Error("The simulated beacon has no open check-in to broadcast for.");
+  const at = new Date(serverTime).getTime() - Number(values["beacon-age"] ?? 0);
+  const payload = makeBeaconPayload(Buffer.from(run.key, "base64"), beaconSeqAt(new Date(run.startedAt).getTime(), at));
+  return [{ data: payload.toString("base64"), rssi: Number(values.rssi ?? -62), heardAgoMs: 400 }];
 }
 
 /** Run-sheet labels from the flags, as the app's experiment settings would add them. */
@@ -112,6 +173,9 @@ function labels() {
 }
 
 async function main() {
+  if (command === "beacon-link") return beaconLink();
+  if (command === "beacon-status") return console.log(JSON.stringify(await beaconPoll(values.state ?? "waiting"), null, 2));
+
   const state = load();
   const access = await login(state);
 
@@ -122,6 +186,7 @@ async function main() {
     // A relay: screenshot, send on WhatsApp, open on another screen, scan.
     if (values.delay) await new Promise((r) => setTimeout(r, Number(values.delay)));
     const token = payload.replace(/^QA1:C:/, "");
+    const beacons = values.beacon ? await heardBeacon() : [];
     const attemptId = crypto.randomUUID();
     const t1 = performance.now();
     const signature = sig(state.privateKeyPem, `QRv1-CHK|${token}|${state.deviceId}|${attemptId}`);
@@ -129,13 +194,13 @@ async function main() {
     const t2 = performance.now();
     const { data } = await call<Record<string, unknown>>("/checkins", {
       token: access,
-      body: { token: payload, attemptId, signature, ssid: values.ssid ?? null, decodeMs, biometricMs, authMethod: "SIMULATOR", ...labels() },
+      body: { token: payload, attemptId, signature, beacons, decodeMs, biometricMs, authMethod: "SIMULATOR", ...labels() },
     });
     const postRttMs = performance.now() - t2;
     // Timings known only after the reply go up with the log, as the app does.
     await call("/attempts/bulk", { token: access, body: { attempts: [{ id: attemptId, postRttMs, totalMs: performance.now() - t0 }] } });
-    const { verdict, attendance, tokenAgeMs, seq, message } = data as Record<string, unknown>;
-    console.log(JSON.stringify({ verdict, attendance, tokenAgeMs, seq, message }));
+    const { verdict, attendance, tokenAgeMs, seq, beaconOk, message } = data as Record<string, unknown>;
+    console.log(JSON.stringify({ verdict, attendance, tokenAgeMs, seq, beaconOk, message }));
   } else if (command === "nodecode") {
     const { data } = await call("/attempts/bulk", {
       token: access,

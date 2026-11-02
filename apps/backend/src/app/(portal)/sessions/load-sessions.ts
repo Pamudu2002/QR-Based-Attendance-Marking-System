@@ -49,7 +49,6 @@ export async function loadSessionsView(
     venue: x.venue,
     opensBeforeMin: x.opensBeforeMin,
     lateAfterMin: x.lateAfterMin,
-    expectedSsid: x.expectedSsid,
     isExperiment: x.isExperiment,
   });
 

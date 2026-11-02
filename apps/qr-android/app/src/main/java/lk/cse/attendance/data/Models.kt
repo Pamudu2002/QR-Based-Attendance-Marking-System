@@ -153,12 +153,17 @@ data class RegisterResponse(
 
 // ── Check-in (week 3) ──────────────────────────────────────────────────────
 
+/** One beacon advert as heard: the 15-byte payload (base64), signal strength, and how long ago. */
+@Serializable
+data class BeaconHeard(val data: String, val rssi: Int, val heardAgoMs: Double)
+
 @Serializable
 data class CheckinRequest(
     val token: String,
     val attemptId: String,
     val signature: String,
-    val ssid: String? = null,
+    /** Classroom beacon codes heard while scanning (PLAN §6.5), strongest first. */
+    val beacons: List<BeaconHeard> = emptyList(),
     val phoneLabel: String? = null,
     val distanceRow: String? = null,
     val distanceM: Double? = null,
@@ -194,7 +199,8 @@ data class CheckinResponse(
     val tokenAgeMs: Int? = null,
     val seq: Int? = null,
     val receivedAt: String? = null,
-    val wifiOk: Boolean? = null,
+    /** A current beacon code for this run was heard; null = none sent. */
+    val beaconOk: Boolean? = null,
     val intervalSec: Int? = null,
     val graceSec: Int? = null,
     val session: CheckinSession? = null,
@@ -210,7 +216,6 @@ data class AttemptUpload(
     val verdict: String? = null,
     val reason: String? = null,
     val token: String? = null,
-    val ssid: String? = null,
     val phoneLabel: String? = null,
     val distanceRow: String? = null,
     val distanceM: Double? = null,

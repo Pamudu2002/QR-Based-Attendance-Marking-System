@@ -6,6 +6,7 @@ import { requireLecturer } from "@/lib/auth";
 import { ApiError } from "@/lib/http";
 import { formatDay, formatTime } from "@/lib/time";
 import { sessionAttendance } from "@/server/attendance";
+import { beaconStatus } from "@/server/checkin";
 import { AttendanceList } from "./AttendanceList";
 import { CheckinPanel } from "./CheckinPanel";
 
@@ -25,6 +26,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const lecturer = await requireLecturer();
   const data = await load(lecturer.id, id);
   const { session, counts } = data;
+  const beaconPhones = await beaconStatus(lecturer.id);
 
   const now = Date.now();
   const opensAt = new Date(session.startsAt.getTime() - session.opensBeforeMin * 60_000);
@@ -63,7 +65,6 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
             <p className={s.sub}>
               {formatDay(session.startsAt)} · {formatTime(session.startsAt)} – {formatTime(session.endsAt)} · {session.venue} · late after{" "}
               {formatTime(lateAt)}
-              {session.expectedSsid ? ` · Wi-Fi ${session.expectedSsid}` : ""}
             </p>
           </div>
           <Link className="lu-btn lu-btn--ghost" href={`/modules/${session.module.id}/sessions`}>
@@ -120,7 +121,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
             <CheckinPanel
               sessionId={session.id}
               active={data.activeWindow ? { ...data.activeWindow, startedAt: data.activeWindow.startedAt.toISOString() } : null}
-              expectedSsid={session.expectedSsid}
+              beaconPhones={beaconPhones.map(({ id, model, online, state }) => ({ id, model, online, state }))}
               isExperiment={session.isExperiment}
               canStart={!isOver || session.isExperiment}
               timeNote={timeNote}

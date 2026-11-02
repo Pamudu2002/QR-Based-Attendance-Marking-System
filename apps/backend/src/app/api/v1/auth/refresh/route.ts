@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ApiError, handler } from "@/lib/http";
 import { clearLecturerSession, rotateRefreshToken, setLecturerSession } from "@/lib/auth";
@@ -40,22 +39,28 @@ export const POST = handler(async (req) => {
   return { ok: true };
 });
 
+/**
+ * A relative redirect. `req.url` names the server's own host (localhost:3000 in
+ * dev), so an absolute one would move a browser that came in on the LAN address
+ * to localhost, where its cookies don't apply: a refresh/login loop.
+ */
+const redirectTo = (path: string) => new Response(null, { status: 307, headers: { Location: path } });
+
 /** Browser redirect used by the proxy: refresh, then go back to `next`. */
 export const GET = handler(async (req) => {
   const next = safeNext(req.nextUrl.searchParams.get("next"));
   const raw = req.cookies.get(REFRESH_COOKIE)?.value;
-  const login = new URL("/login", req.url);
-  if (next !== "/") login.searchParams.set("next", next);
+  const login = next === "/" ? "/login" : `/login?${new URLSearchParams({ next })}`;
 
-  if (!raw) return NextResponse.redirect(login);
+  if (!raw) return redirectTo(login);
   try {
     const rotated = await rotateRefreshToken(raw);
-    if (!("lecturerId" in rotated.owner)) return NextResponse.redirect(login);
+    if (!("lecturerId" in rotated.owner)) return redirectTo(login);
     await setLecturerSession(rotated.owner.lecturerId, rotated.refreshToken, rotated.persistent);
-    return NextResponse.redirect(new URL(next, req.url));
+    return redirectTo(next);
   } catch (err) {
     if (!(err instanceof ApiError)) throw err;
     await clearLecturerSession();
-    return NextResponse.redirect(login);
+    return redirectTo(login);
   }
 });

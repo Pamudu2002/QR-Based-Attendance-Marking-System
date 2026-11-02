@@ -31,6 +31,21 @@ class ContractTest {
         assertNull(r.session)
     }
 
+    @Test fun sendsTheBeaconCodesHeardWithACheckIn() {
+        val heard = BeaconHeard(data = "Q0EBAAAAB/XAfS7oIXXX", rssi = -64, heardAgoMs = 412.5)
+        val out = json.encodeToString(CheckinRequest.serializer(), CheckinRequest(token = "QA1:C:x", attemptId = "a", signature = "s", beacons = listOf(heard)))
+        assertEquals("""{"token":"QA1:C:x","attemptId":"a","signature":"s","beacons":[{"data":"Q0EBAAAAB/XAfS7oIXXX","rssi":-64,"heardAgoMs":412.5}]}""", out)
+        // Nothing heard: the field is left out, as the server's default is an empty list.
+        assertFalse(json.encodeToString(CheckinRequest.serializer(), CheckinRequest(token = "t", attemptId = "a", signature = "s")).contains("beacons"))
+    }
+
+    @Test fun readsTheBeaconVerdict() {
+        val body = """{"attemptId":"a","verdict":"NO_BEACON","attendance":null,"message":"Classroom beacon not found. Turn on Bluetooth and move closer to the front, then scan again.","tokenAgeMs":1896,"seq":0,"beaconOk":null,"receivedAt":"2026-11-02T05:23:51.000Z","serverTime":"2026-11-02T05:23:51.100Z","session":null,"module":null,"summary":null}"""
+        val r = json.decodeFromString(CheckinResponse.serializer(), body)
+        assertEquals("NO_BEACON", r.verdict)
+        assertNull(r.beaconOk)
+    }
+
     @Test fun leavesOutEmptyFieldsWhenUploading() {
         val out = json.encodeToString(AttemptUploadRequest.serializer(), AttemptUploadRequest(listOf(AttemptUpload(id = "x", postRttMs = 312.5, totalMs = 2400.0))))
         assertEquals("""{"attempts":[{"id":"x","postRttMs":312.5,"totalMs":2400.0}]}""", out)

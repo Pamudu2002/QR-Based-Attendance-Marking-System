@@ -101,6 +101,13 @@ The **experiment** runs on top of this system.
 
 **Not used:** the Expo/React Native apps and the NFC code.
 
+**Deployment:**
+- **Vercel project** `qr-based-attendance-marking-system` → `https://qr-based-attendance-marking-system.vercel.app`, connected to the GitHub repo. A push to `main` deploys production; other branches get preview deployments (behind Vercel login; the production address is public so phones and projectors can reach it).
+- **Settings:** root directory `apps/backend`, Node 24, functions in Singapore (`sin1`), build command `pnpm run vercel-build` (= `prisma generate`, migrations, `next build`).
+- **Database:** Neon `cse-attendance` (Singapore, free plan) through the Vercel Neon integration, which sets `DATABASE_URL` (pooled, used by the app) and `DATABASE_URL_UNPOOLED` (direct, used by migrations). `scripts/migrate-production.mjs` runs `prisma migrate deploy` on **production builds only**; previews share the database and never change its schema.
+- **Other variables:** `JWT_SECRET` and `EXPORT_PSEUDONYM_KEY` (sensitive, separate values for production and preview), `ALLOWED_LECTURER_DOMAINS=uom.lk`.
+- **Local development** keeps its own database in `apps/backend/.env`; nothing local points at Neon.
+
 ---
 
 ## 4. Lecturer web portal
@@ -412,8 +419,8 @@ seq     = floor((server now − window.startedAt) / 5 s)
 ---
 
 ## 7. Projector pages
-- Check-in: `https://attendance-backend-steel.vercel.app/present/checkin/<windowId>`
-- Registration: `https://attendance-backend-steel.vercel.app/present/register/<moduleId>`
+- Check-in: `https://qr-based-attendance-marking-system.vercel.app/present/checkin/<windowId>`
+- Registration: `https://qr-based-attendance-marking-system.vercel.app/present/register/<moduleId>`
 - **Fullscreen white page:**
   - the module title;
   - the QR code at a **fixed size** (e.g. 60% of screen height, error correction level M);

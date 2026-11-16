@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Newsreader } from "next/font/google";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
 import "./styles/tokens.css";
 import "./styles/lumora-components.css";
 import "./styles/globals.css";
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <ConfirmProvider>{children}</ConfirmProvider>
+      </body>
     </html>
   );
 }

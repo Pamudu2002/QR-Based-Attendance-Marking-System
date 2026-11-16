@@ -1,0 +1,46 @@
+/* Native <dialog> defaults reset; the look comes from Lumora's .lu-dialog. */
+.dialog {
+  padding: 0;
+  margin: auto;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.dialog::backdrop {
+  background: var(--scrim);
+}
+
+.dangerIcon {
+  flex: none;
+  color: var(--danger);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog[open] {
+    animation: rise 140ms ease-out;
+  }
+  .dialog[open]::backdrop {
+    animation: fade 140ms ease-out;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

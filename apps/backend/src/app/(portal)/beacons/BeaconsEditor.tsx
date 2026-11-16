@@ -6,6 +6,7 @@ import { CircleCheck, Smartphone } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { FormError } from "@/components/Field";
 import { ico } from "@/components/icon";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { api } from "@/lib/client-api";
 import { formatDayTime } from "@/lib/time";
 
@@ -30,6 +31,7 @@ const STATE: Record<string, { text: string; tone: "success" | "danger" }> = {
 };
 
 export function BeaconsEditor({ initial }: { initial: Phone[] }) {
+  const confirm = useConfirm();
   const [phones, setPhones] = useState(initial);
   const [link, setLink] = useState<LinkCode | null>(null);
   const [svg, setSvg] = useState<string | null>(null);
@@ -100,7 +102,13 @@ export function BeaconsEditor({ initial }: { initial: Phone[] }) {
   }
 
   async function remove(p: Phone) {
-    if (!confirm(`Remove ${p.model}? It stops broadcasting for your classes until you link it again.`)) return;
+    const ok = await confirm({
+      title: `Remove ${p.model}?`,
+      body: "It stops broadcasting for your classes until you link it again.",
+      confirmLabel: "Remove phone",
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(p.id);
     setError(null);
     try {

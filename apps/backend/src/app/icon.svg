@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- CSE Attendance: the Android launcher's QR-style mark on brand teal. -->
+  <rect width="32" height="32" rx="7" fill="#0D6767"/>
+  <path fill="#FFFFFF" d="M6 6h8v8H6z M18 6h8v8h-8z M6 18h8v8H6z M19 19h3v3h-3z M23 23h3v3h-3z M23 18h3v3h-3z M18 23h3v3h-3z"/>
+  <path fill="#0D6767" d="M8 8h4v4H8z M20 8h4v4h-4z M8 20h4v4H8z"/>
+</svg>

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Check, CircleMinus, Ellipsis, Pencil, Trash, TriangleAlert } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { ico, icoXs } from "@/components/icon";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { androidVersion } from "@/lib/android";
 import { api } from "@/lib/client-api";
 import { nameKey } from "@/lib/identity";
@@ -24,6 +25,7 @@ const PAGE = 25;
 
 export function RosterTable({ moduleId, rows }: { moduleId: string; rows: RosterTableRow[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -72,13 +74,25 @@ export function RosterTable({ moduleId, rows }: { moduleId: string; rows: Roster
     }
   }
 
-  function remove(r: RosterTableRow) {
-    if (!confirm(`Remove ${r.indexNumber} ${r.name} from this module? Their attendance for this module stays in the records.`)) return;
+  async function remove(r: RosterTableRow) {
+    const ok = await confirm({
+      title: `Remove ${r.indexNumber} ${r.name}?`,
+      body: "They're taken off this module's list. Their attendance for this module stays in the records.",
+      confirmLabel: "Remove student",
+      danger: true,
+    });
+    if (!ok) return;
     void run(r.studentId, () => api(`/modules/${moduleId}/students/${r.studentId}`, { method: "DELETE" }));
   }
 
-  function reset(r: RosterTableRow) {
-    if (!confirm(`Reset ${r.indexNumber}'s phone? Use this when they change phones. They'll need to scan the registration QR again with the new phone.`)) return;
+  async function reset(r: RosterTableRow) {
+    const ok = await confirm({
+      title: `Reset ${r.indexNumber}'s phone?`,
+      body: "Use this when they change phones. Their current phone stops working, and they scan the registration QR again with the new one.",
+      confirmLabel: "Reset phone",
+      danger: true,
+    });
+    if (!ok) return;
     void run(r.studentId, () => api(`/students/${r.studentId}/reset-device`, { method: "POST" }));
   }
 
@@ -271,7 +285,10 @@ export function RosterTable({ moduleId, rows }: { moduleId: string; rows: Roster
                         role="menuitem"
                         className="lu-btn lu-btn--ghost lu-btn--sm"
                         style={{ color: "var(--danger)" }}
-                        onClick={() => remove(r)}
+                        onClick={() => {
+                          setMenu(null);
+                          void remove(r);
+                        }}
                       >
                         <Trash {...ico} />
                         Remove from module

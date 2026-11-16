@@ -6,10 +6,12 @@ import { Archive, Trash } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { FormError } from "@/components/Field";
 import { ico } from "@/components/icon";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { api } from "@/lib/client-api";
 
 export function DangerZone({ moduleId, archived }: { moduleId: string; archived: boolean }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,8 +55,14 @@ export function DangerZone({ moduleId, archived }: { moduleId: string; archived:
         type="button"
         className="lu-btn lu-btn--danger"
         disabled={busy}
-        onClick={() => {
-          if (!confirm("Delete this module with its roster, sessions and attendance? This can't be undone.")) return;
+        onClick={async () => {
+          const ok = await confirm({
+            title: "Delete this module?",
+            body: "Its student list, sessions and attendance are deleted with it. This can't be undone.",
+            confirmLabel: "Delete module",
+            danger: true,
+          });
+          if (!ok) return;
           void run(() => api(`/modules/${moduleId}`, { method: "DELETE" }), "/modules");
         }}
       >

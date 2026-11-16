@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Info, Ellipsis } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { Field, FormError } from "@/components/Field";
 import { ico } from "@/components/icon";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { api, ClientApiError } from "@/lib/client-api";
 import { nthTitle } from "@/lib/series";
 import { addDays, formatDay, formatTime, utcToZoned, zonedToUtc } from "@/lib/time";
@@ -99,6 +100,7 @@ function formFrom(x: SessionItem): FormState {
 
 export function SessionsView(props: SessionsViewProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const path = usePathname();
   const { modules, today } = props;
   const defaultModule = props.moduleId ?? modules[0]?.id ?? "";
@@ -189,7 +191,13 @@ export function SessionsView(props: SessionsViewProps) {
 
   async function remove() {
     if (!editing) return;
-    if (!confirm(`Delete ${editing.title} on ${formatDay(new Date(editing.startsAt))}? Its attendance records are deleted too.`)) return;
+    const ok = await confirm({
+      title: `Delete ${editing.title}?`,
+      body: `The session on ${formatDay(new Date(editing.startsAt))} and its attendance records are deleted. This can't be undone.`,
+      confirmLabel: "Delete session",
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {

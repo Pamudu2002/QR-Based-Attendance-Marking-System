@@ -6,6 +6,7 @@ import { Check, Clock, Copy, Mail, TriangleAlert, X } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { Field, FormError } from "@/components/Field";
 import { ico, icoXs } from "@/components/icon";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { api, ClientApiError } from "@/lib/client-api";
 import type { AccountStatus } from "@/lib/lecturer-account";
 import { formatDay, formatDayTime } from "@/lib/time";
@@ -122,6 +123,7 @@ function IssuedPassword({ issued, onHide }: { issued: Issued; onHide: () => void
 
 export function LecturersAdmin({ rows }: { rows: LecturerRow[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [issued, setIssued] = useState<Issued | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -152,7 +154,13 @@ export function LecturersAdmin({ rows }: { rows: LecturerRow[] }) {
 
   async function reset(r: LecturerRow) {
     const note = r.status === "ACTIVE" ? " Their current password stops working and they're logged out." : "";
-    if (!confirm(`Make a new temporary password for ${r.name}?${note}`)) return;
+    const ok = await confirm({
+      title: `Make a new temporary password for ${r.name}?`,
+      body: `You'll see it once, to pass on to them.${note}`,
+      confirmLabel: "Make password",
+      danger: r.status === "ACTIVE",
+    });
+    if (!ok) return;
     setRowBusy(r.id);
     setTableError(null);
     try {

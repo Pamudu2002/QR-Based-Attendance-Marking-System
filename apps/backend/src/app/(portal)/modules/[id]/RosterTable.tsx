@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Check, CircleMinus, Ellipsis, Pencil, Trash, TriangleAlert } from "lucide-react";
+import { Check, CircleMinus, Pencil, Trash, TriangleAlert } from "lucide-react";
 import s from "@/app/styles/portal.module.css";
 import { ico, icoXs } from "@/components/icon";
+import { ActionMenu } from "@/components/ActionMenu";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { androidVersion } from "@/lib/android";
 import { api } from "@/lib/client-api";
@@ -29,7 +30,6 @@ export function RosterTable({ moduleId, rows }: { moduleId: string; rows: Roster
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
-  const [menu, setMenu] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +63,6 @@ export function RosterTable({ moduleId, rows }: { moduleId: string; rows: Roster
   async function run(id: string, action: () => Promise<unknown>) {
     setBusy(id);
     setError(null);
-    setMenu(null);
     try {
       await action();
       router.refresh();
@@ -233,68 +232,20 @@ export function RosterTable({ moduleId, rows }: { moduleId: string; rows: Roster
                     </span>
                   )}
                 </td>
-                <td className={`${s.right} ${s.nowrap}`} style={{ position: "relative" }}>
+                <td className={`${s.right} ${s.nowrap}`}>
                   {r.registeredAt && (
                     <button type="button" className="lu-btn lu-btn--sm lu-btn--ghost" onClick={() => reset(r)} disabled={!!busy}>
                       Reset device
                     </button>
                   )}
-                  <button
-                    type="button"
-                    className="lu-iconbtn lu-iconbtn--sm"
-                    aria-label={`More actions for ${r.indexNumber}`}
-                    aria-expanded={menu === r.studentId}
-                    style={{ verticalAlign: "middle" }}
-                    onClick={() => setMenu(menu === r.studentId ? null : r.studentId)}
-                  >
-                    <Ellipsis {...ico} />
-                  </button>
-                  {menu === r.studentId && (
-                    <div
-                      role="menu"
-                      style={{
-                        position: "absolute",
-                        right: 16,
-                        top: "100%",
-                        zIndex: 10,
-                        background: "var(--surface-raised)",
-                        border: "1px solid var(--line)",
-                        borderRadius: "var(--radius-md)",
-                        boxShadow: "var(--shadow-popover)",
-                        padding: 4,
-                        display: "flex",
-                        flexDirection: "column",
-                        minWidth: 180,
-                        textAlign: "left",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="lu-btn lu-btn--ghost lu-btn--sm"
-                        onClick={() => {
-                          setMenu(null);
-                          setEditing({ id: r.studentId, name: r.name });
-                        }}
-                      >
-                        <Pencil {...ico} />
-                        Edit name
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="lu-btn lu-btn--ghost lu-btn--sm"
-                        style={{ color: "var(--danger)" }}
-                        onClick={() => {
-                          setMenu(null);
-                          void remove(r);
-                        }}
-                      >
-                        <Trash {...ico} />
-                        Remove from module
-                      </button>
-                    </div>
-                  )}
+                  <ActionMenu
+                    label={`More actions for ${r.indexNumber}`}
+                    disabled={!!busy}
+                    items={[
+                      { label: "Edit name", icon: Pencil, onSelect: () => setEditing({ id: r.studentId, name: r.name }) },
+                      { label: "Remove from module", icon: Trash, danger: true, onSelect: () => void remove(r) },
+                    ]}
+                  />
                 </td>
               </tr>
             ))}

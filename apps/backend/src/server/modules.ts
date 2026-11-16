@@ -3,11 +3,13 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { ApiError } from "@/lib/http";
-import { moduleShortName } from "@/lib/identity";
+import { moduleShortName, normaliseIntake, normaliseSemester } from "@/lib/identity";
 
 export const ModuleInput = z.object({
-  intake: z.string().trim().min(1, "Enter the intake, e.g. In22.").max(16),
-  semester: z.string().trim().min(1, "Enter the semester, e.g. S7.").max(16),
+  /** "22" or "In22" → stored as "In22". */
+  intake: z.string().transform((s, ctx) => normaliseIntake(s) ?? (ctx.addIssue({ code: "custom", message: "Enter the two-digit intake number, e.g. 22." }), z.NEVER)),
+  /** "7" or "S7" → stored as "S7". */
+  semester: z.string().transform((s, ctx) => normaliseSemester(s) ?? (ctx.addIssue({ code: "custom", message: "Enter the semester number, e.g. 7." }), z.NEVER)),
   code: z
     .string()
     .trim()

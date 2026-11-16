@@ -26,6 +26,18 @@ export function cleanName(name: string): string {
 
 export type ModuleKey = { intake: string; semester: string; code: string };
 
+/** "22", "In22" or "in22" → "In22". Null unless it's two digits after the optional "In". */
+export function normaliseIntake(raw: string): string | null {
+  const m = raw.trim().match(/^(?:in)?\s*(\d{2})$/i);
+  return m ? `In${m[1]}` : null;
+}
+
+/** "7", "S7" or "s7" → "S7". Null if it isn't 1–2 digits after the optional "S". */
+export function normaliseSemester(raw: string): string | null {
+  const m = raw.trim().match(/^s?\s*(\d{1,2})$/i);
+  return m ? `S${m[1]}` : null;
+}
+
 export function moduleShortName(m: ModuleKey): string {
   return `${m.intake}-${m.semester}-${m.code}`;
 }

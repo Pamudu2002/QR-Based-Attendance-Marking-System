@@ -85,6 +85,24 @@ private fun UploadNotice(dao: AttemptDao, checkIns: CheckIns) {
     }
 }
 
+/** Swipe down on the experiment screens: send waiting attempts. Room updates the counts and the list. */
+@Composable
+private fun UploadRefresh(checkIns: CheckIns, modifier: Modifier, content: @Composable () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var refreshing by remember { mutableStateOf(false) }
+    Refreshable(
+        refreshing = refreshing,
+        onRefresh = {
+            refreshing = true
+            scope.launch {
+                runCatching { checkIns.upload() }
+                refreshing = false
+            }
+        },
+        modifier = modifier,
+    ) { content() }
+}
+
 /**
  * Experiment settings (design/screens/AppSettings.dc.html), opened by a long
  * press on the home title. The labels are saved with every check-in attempt.
@@ -110,39 +128,39 @@ fun ExperimentSettingsScreen(session: Session, dao: AttemptDao, checkIns: CheckI
         timeout.toIntOrNull()?.let { p.scanTimeoutSec = it }
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Lumora.colors.surfaceSunken)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        BackTitle("Experiment settings", onBack = { save(); onBack() }) { StatusBadge("Hidden screen", Tone.Warning) }
-        Notice(Tone.Info, "For the CS4473 experiment only. These labels are saved with every check-in attempt. Leave the phone label empty for normal use.")
+    UploadRefresh(checkIns, Modifier.fillMaxSize().background(Lumora.colors.surfaceSunken).statusBarsPadding()) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            BackTitle("Experiment settings", onBack = { save(); onBack() }) { StatusBadge("Hidden screen", Tone.Warning) }
+            Notice(Tone.Info, "For the CS4473 experiment only. These labels are saved with every check-in attempt. Leave the phone label empty for normal use.")
 
-        LuCard {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(label, { label = it }, label = { Text("Phone label") }, placeholder = { Text("P1-lowend") }, singleLine = true, modifier = Modifier.weight(1f))
-                OutlinedTextField(distance, { distance = it }, label = { Text("Distance (m)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+            LuCard {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(label, { label = it }, label = { Text("Phone label") }, placeholder = { Text("P1-lowend") }, singleLine = true, modifier = Modifier.weight(1f))
+                    OutlinedTextField(distance, { distance = it }, label = { Text("Distance (m)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.weight(1f))
+                }
+                Text("Seat row", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted, modifier = Modifier.padding(top = 8.dp))
+                Segments(listOf("FRONT" to "Front", "MIDDLE" to "Middle", "BACK" to "Back"), row) { row = it }
+                Text("Role", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted, modifier = Modifier.padding(top = 8.dp))
+                Segments(listOf("GENUINE" to "Genuine", "RELAY" to "Relay"), role) { role = it }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    OutlinedTextField(run, { run = it.filter(Char::isDigit) }, label = { Text("Run") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f))
+                    OutlinedTextField(next, { next = it.filter(Char::isDigit) }, label = { Text("Next attempt") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f))
+                    OutlinedTextField(timeout, { timeout = it.filter(Char::isDigit) }, label = { Text("Timeout (s)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f))
+                }
+                PrimaryButton("Save", onClick = ::save, modifier = Modifier.padding(top = 8.dp))
             }
-            Text("Seat row", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted, modifier = Modifier.padding(top = 8.dp))
-            Segments(listOf("FRONT" to "Front", "MIDDLE" to "Middle", "BACK" to "Back"), row) { row = it }
-            Text("Role", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted, modifier = Modifier.padding(top = 8.dp))
-            Segments(listOf("GENUINE" to "Genuine", "RELAY" to "Relay"), role) { role = it }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                OutlinedTextField(run, { run = it.filter(Char::isDigit) }, label = { Text("Run") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f))
-                OutlinedTextField(next, { next = it.filter(Char::isDigit) }, label = { Text("Next attempt") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f))
-                OutlinedTextField(timeout, { timeout = it.filter(Char::isDigit) }, label = { Text("Timeout (s)") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f))
-            }
-            PrimaryButton("Save", onClick = ::save, modifier = Modifier.padding(top = 8.dp))
+
+            UploadNotice(dao, checkIns)
+            SecondaryButton("Attempt log", onClick = { save(); onLog() }, modifier = Modifier.fillMaxWidth())
         }
-
-        UploadNotice(dao, checkIns)
-        SecondaryButton("Attempt log", onClick = { save(); onLog() }, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -161,18 +179,20 @@ private val logTime = DateTimeFormatter.ofPattern("d MMM HH:mm:ss", Locale.UK)
 @Composable
 fun AttemptLogScreen(dao: AttemptDao, checkIns: CheckIns, onBack: () -> Unit) {
     val attempts by dao.recent().collectAsState(initial = null)
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().background(Lumora.colors.surfaceSunken).statusBarsPadding(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { BackTitle("Attempt log", onBack) }
-        item { UploadNotice(dao, checkIns) }
-        val list = attempts
-        when {
-            list == null -> item { Loading() }
-            list.isEmpty() -> item { Text("No attempts yet.", color = Lumora.colors.inkMuted) }
-            else -> items(list, key = { it.id }) { AttemptRow(it) }
+    UploadRefresh(checkIns, Modifier.fillMaxSize().background(Lumora.colors.surfaceSunken).statusBarsPadding()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item { BackTitle("Attempt log", onBack) }
+            item { UploadNotice(dao, checkIns) }
+            val list = attempts
+            when {
+                list == null -> item { Loading() }
+                list.isEmpty() -> item { Text("No attempts yet.", color = Lumora.colors.inkMuted) }
+                else -> items(list, key = { it.id }) { AttemptRow(it) }
+            }
         }
     }
 }

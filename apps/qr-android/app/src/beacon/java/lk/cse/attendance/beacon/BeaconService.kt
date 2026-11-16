@@ -54,11 +54,20 @@ class BeaconService : Service() {
         private const val POLL_MS = 2_000L
         /** Keep broadcasting a known run this long without the server, then stop. */
         private const val OFFLINE_GRACE_MS = 5 * 60_000L
+        private const val ACTION_REFRESH = "lk.cse.attendance.beacon.REFRESH"
 
         private val _ui = MutableStateFlow(BeaconUi())
         val ui: StateFlow<BeaconUi> = _ui
 
+        private val _polls = MutableStateFlow(0L)
+        /** Counts finished polls, so the screen can wait for a fresh one after a swipe. */
+        val polls: StateFlow<Long> = _polls
+
         fun start(context: Context) = ContextCompat.startForegroundService(context, Intent(context, BeaconService::class.java))
+
+        /** Starts the service if needed and asks the server now instead of at the next 2 s poll. */
+        fun refresh(context: Context) =
+            ContextCompat.startForegroundService(context, Intent(context, BeaconService::class.java).setAction(ACTION_REFRESH))
 
         fun stop(context: Context) = context.stopService(Intent(context, BeaconService::class.java))
     }
@@ -72,6 +81,7 @@ class BeaconService : Service() {
     private var serverAtPollMs = 0L
     private var elapsedAtPollMs = 0L
     private var lastOkElapsedMs = 0L
+    @Volatile private var pollNow = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -89,6 +99,7 @@ class BeaconService : Service() {
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "cse-attendance:beacon")
                 .apply { acquire(10 * 60 * 60_000L) }
         }
+        if (intent?.action == ACTION_REFRESH) pollNow = true
         if (loop?.isActive != true) loop = scope.launch { run() }
         return START_STICKY
     }
@@ -111,8 +122,9 @@ class BeaconService : Service() {
         while (scope.isActive) {
             val now = SystemClock.elapsedRealtime()
             val problem = broadcaster.problem()
-            if (now >= nextPoll) {
+            if (now >= nextPoll || pollNow) {
                 nextPoll = now + POLL_MS
+                pollNow = false
                 val state = problem?.serverState ?: if (broadcaster.active) "broadcasting" else "waiting"
                 try {
                     val cur = app.api.current(state)
@@ -131,6 +143,8 @@ class BeaconService : Service() {
                 } catch (e: ApiException) {
                     // Keep a known run going through short network drops.
                     if (now - lastOkElapsedMs > OFFLINE_GRACE_MS) run = null
+                } finally {
+                    _polls.value++
                 }
             }
 

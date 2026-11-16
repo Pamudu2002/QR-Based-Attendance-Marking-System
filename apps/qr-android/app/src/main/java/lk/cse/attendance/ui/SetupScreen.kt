@@ -100,77 +100,85 @@ fun SetupScreen(session: Session, activity: MainActivity, onDone: () -> Unit) {
         }
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Lumora.colors.surface)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    // A swipe checks the permissions again, for example after allowing them in Android settings.
+    Refreshable(
+        refreshing = false,
+        onRefresh = {
+            camera = granted(Manifest.permission.CAMERA)
+            bluetooth = BeaconListener.hasPermission(context)
+        },
+        modifier = Modifier.fillMaxSize().background(Lumora.colors.surface).statusBarsPadding(),
     ) {
-        BrandName()
-
-        Box(
+        Column(
             Modifier
-                .fillMaxWidth()
-                .background(Lumora.colors.canvas, MaterialTheme.shapes.medium)
-                .padding(24.dp),
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                Box(Modifier.background(Lumora.colors.paper).padding(10.dp)) {
-                    Icon(Icons.Outlined.QrCode2, contentDescription = null, tint = Color.Black, modifier = Modifier.size(72.dp))
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Check in with one scan", style = MaterialTheme.typography.headlineSmall.copy(fontSize = MaterialTheme.typography.titleLarge.fontSize))
-                    Text("Scan the QR on the projector and confirm with your fingerprint or PIN.", color = Lumora.colors.inkMuted, style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
+            BrandName()
 
-        Column {
-            Text("Set up this phone", style = MaterialTheme.typography.titleLarge)
-            Text("About a minute. You only do this once.", color = Lumora.colors.inkMuted, style = MaterialTheme.typography.bodyMedium)
-        }
-
-        LuCard(padding = false) {
-            SetupRow(Icons.Outlined.CameraAlt, "Camera", "To read the QR on the projector", done = camera, doneText = "Allowed") {
-                TextButton(onClick = { cameraLauncher.launch(Manifest.permission.CAMERA) }) { Text("Allow") }
-            }
-            HorizontalDivider(color = Lumora.colors.line)
-            SetupRow(Icons.Outlined.Key, "Secure key", "Stays in this phone's security chip", done = keyCreated, doneText = "Created") {
-                Text("On Continue", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted)
-            }
-            HorizontalDivider(color = Lumora.colors.line)
-            SetupRow(
-                Icons.Outlined.Bluetooth,
-                "Bluetooth",
-                if (bluetoothNeedsLocation) "To find the classroom beacon. Android asks for location to use it" else "To find the classroom beacon",
-                done = bluetooth,
-                doneText = "Allowed",
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Lumora.colors.canvas, MaterialTheme.shapes.medium)
+                    .padding(24.dp),
             ) {
-                TextButton(onClick = { bluetoothLauncher.launch(BeaconListener.permissions()) }) { Text("Allow") }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    Box(Modifier.background(Lumora.colors.paper).padding(10.dp)) {
+                        Icon(Icons.Outlined.QrCode2, contentDescription = null, tint = Color.Black, modifier = Modifier.size(72.dp))
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Check in with one scan", style = MaterialTheme.typography.headlineSmall.copy(fontSize = MaterialTheme.typography.titleLarge.fontSize))
+                        Text("Scan the QR on the projector and confirm with your fingerprint or PIN.", color = Lumora.colors.inkMuted, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
-        }
 
-        Notice(Tone.Info, "Your fingerprint never leaves this phone. CSE Attendance doesn't track where you are.")
-
-        if (noScreenLock) {
-            Notice(Tone.Warning, "Set a PIN, pattern, password or fingerprint, then come back and tap Continue.", lead = "This phone has no screen lock.") {
-                SecondaryButton("Open security settings", onClick = { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) })
+            Column {
+                Text("Set up this phone", style = MaterialTheme.typography.titleLarge)
+                Text("About a minute. You only do this once.", color = Lumora.colors.inkMuted, style = MaterialTheme.typography.bodyMedium)
             }
-        }
-        error?.let { Notice(Tone.Danger, it) }
 
-        PrimaryButton(if (camera) "Continue" else "Allow camera and continue", onClick = ::continueSetup, busy = busy)
-        Text(
-            "Works on Android 6.0 and newer",
-            style = MaterialTheme.typography.bodySmall,
-            color = Lumora.colors.inkMuted,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+            LuCard(padding = false) {
+                SetupRow(Icons.Outlined.CameraAlt, "Camera", "To read the QR on the projector", done = camera, doneText = "Allowed") {
+                    TextButton(onClick = { cameraLauncher.launch(Manifest.permission.CAMERA) }) { Text("Allow") }
+                }
+                HorizontalDivider(color = Lumora.colors.line)
+                SetupRow(Icons.Outlined.Key, "Secure key", "Stays in this phone's security chip", done = keyCreated, doneText = "Created") {
+                    Text("On Continue", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted)
+                }
+                HorizontalDivider(color = Lumora.colors.line)
+                SetupRow(
+                    Icons.Outlined.Bluetooth,
+                    "Bluetooth",
+                    if (bluetoothNeedsLocation) "To find the classroom beacon. Android asks for location to use it" else "To find the classroom beacon",
+                    done = bluetooth,
+                    doneText = "Allowed",
+                ) {
+                    TextButton(onClick = { bluetoothLauncher.launch(BeaconListener.permissions()) }) { Text("Allow") }
+                }
+            }
+
+            Notice(Tone.Info, "Your fingerprint never leaves this phone. CSE Attendance doesn't track where you are.")
+
+            if (noScreenLock) {
+                Notice(Tone.Warning, "Set a PIN, pattern, password or fingerprint, then come back and tap Continue.", lead = "This phone has no screen lock.") {
+                    SecondaryButton("Open security settings", onClick = { context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) })
+                }
+            }
+            error?.let { Notice(Tone.Danger, it) }
+
+            PrimaryButton(if (camera) "Continue" else "Allow camera and continue", onClick = ::continueSetup, busy = busy)
+            Text(
+                "Works on Android 6.0 and newer",
+                style = MaterialTheme.typography.bodySmall,
+                color = Lumora.colors.inkMuted,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

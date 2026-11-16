@@ -94,6 +94,7 @@ fun RegisterScreen(
     var nameError by remember { mutableStateOf<String?>(null) }
     var done by remember { mutableStateOf<RegisterResponse?>(null) }
     var reload by remember { mutableIntStateOf(0) }
+    var refreshing by remember { mutableStateOf(false) }
 
     val bound = me?.student
     val api = session.api
@@ -119,6 +120,7 @@ fun RegisterScreen(
             handle(e)
         } finally {
             loading = false
+            refreshing = false
         }
     }
 
@@ -206,133 +208,143 @@ fun RegisterScreen(
         }
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Lumora.colors.surfaceSunken)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    // A swipe loads the code's module and this phone's details again. What you typed stays.
+    Refreshable(
+        refreshing = refreshing,
+        onRefresh = {
+            if (!busy) {
+                refreshing = true
+                reload++
+            }
+        },
+        modifier = Modifier.fillMaxSize().background(Lumora.colors.surfaceSunken).statusBarsPadding(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back") }
-            Text("Register for a module", style = MaterialTheme.typography.titleMedium)
-        }
-
-        when {
-            revoked -> {
-                Notice(Tone.Danger, "Your lecturer reset this phone. Set up the app again to register it.", lead = "This phone was reset.") {
-                    SecondaryButton("Set up again", onClick = onSetUpAgain)
-                }
-                return@Column
+        Column(
+            Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back") }
+                Text("Register for a module", style = MaterialTheme.typography.titleMedium)
             }
-            needsLogin -> {
-                Notice(Tone.Info, "Unlock the app with your fingerprint or PIN to continue.") {
-                    SecondaryButton("Confirm it's you", onClick = {
-                        scope.launch {
-                            try {
-                                session.logIn(activity)
-                                needsLogin = false
-                                reload++
-                            } catch (e: Exception) {
-                                handle(e)
+
+            when {
+                revoked -> {
+                    Notice(Tone.Danger, "Your lecturer reset this phone. Set up the app again to register it.", lead = "This phone was reset.") {
+                        SecondaryButton("Set up again", onClick = onSetUpAgain)
+                    }
+                    return@Column
+                }
+                needsLogin -> {
+                    Notice(Tone.Info, "Unlock the app with your fingerprint or PIN to continue.") {
+                        SecondaryButton("Confirm it's you", onClick = {
+                            scope.launch {
+                                try {
+                                    session.logIn(activity)
+                                    needsLogin = false
+                                    reload++
+                                } catch (e: Exception) {
+                                    handle(e)
+                                }
                             }
-                        }
-                    })
+                        })
+                    }
+                    return@Column
                 }
+                loading && preview == null -> {
+                    Loading()
+                    return@Column
+                }
+            }
+
+            val p = preview
+            if (p == null) {
+                error?.let { Notice(Tone.Danger, it) }
+                SecondaryButton("Scan again", onClick = onBack, modifier = Modifier.fillMaxWidth())
                 return@Column
             }
-            loading && preview == null -> {
-                Loading()
-                return@Column
+
+            val module = p.module
+            when {
+                done != null -> Notice(Tone.Success, done!!.message, lead = if (done!!.verdict == "REGISTERED") "Registered." else "Already registered.")
+                p.verdict == "OK" -> Notice(Tone.Success, "Registration is open for this module.", lead = "Registration QR read.")
+                else -> Notice(Tone.Danger, p.message)
             }
-        }
 
-        val p = preview
-        if (p == null) {
-            error?.let { Notice(Tone.Danger, it) }
-            SecondaryButton("Scan again", onClick = onBack, modifier = Modifier.fillMaxWidth())
-            return@Column
-        }
-
-        val module = p.module
-        when {
-            done != null -> Notice(Tone.Success, done!!.message, lead = if (done!!.verdict == "REGISTERED") "Registered." else "Already registered.")
-            p.verdict == "OK" -> Notice(Tone.Success, "Registration is open for this module.", lead = "Registration QR read.")
-            else -> Notice(Tone.Danger, p.message)
-        }
-
-        if (module != null) {
-            LuCard {
-                Text(module.shortName, style = MonoText, color = Lumora.colors.inkMuted)
-                Text(module.name, style = MaterialTheme.typography.titleMedium)
-                Text(module.lecturer, style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
-            }
-        }
-
-        if (done != null || p.alreadyRegistered) {
-            if (done == null) Notice(Tone.Success, "You're already registered for this module.")
-            PrimaryButton("Go to my modules", onClick = onDone)
-            return@Column
-        }
-        if (p.verdict != "OK" || module == null) {
-            SecondaryButton("Scan again", onClick = onBack, modifier = Modifier.fillMaxWidth())
-            return@Column
-        }
-
-        if (bound == null) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                OutlinedTextField(
-                    value = index,
-                    onValueChange = { index = it.uppercase().take(7); indexError = null },
-                    label = { Text("Index number") },
-                    singleLine = true,
-                    isError = indexError != null,
-                    supportingText = indexError?.let { { Text(it) } },
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = MonoText.fontFamily),
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false, imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it; nameError = null },
-                    label = { Text("Name") },
-                    singleLine = true,
-                    isError = nameError != null,
-                    supportingText = nameError?.let { { Text(it) } },
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, autoCorrectEnabled = false, imeAction = ImeAction.Done),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(
-                    "Type both exactly as on your lecturer's class list. Capitals, spaces and dots don't matter.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Lumora.colors.inkMuted,
-                )
-            }
-            val linkTo = Identity.normaliseIndex(index).ifEmpty { "your index number" }
-            Notice(Tone.Tip, "This phone will be linked to $linkTo. If you change phones, ask your lecturer to reset it.", lead = "One phone, one student.")
-        } else {
-            val shownName = p.nameOnList ?: bound.name ?: ""
-            if (p.nameOnList == null) {
-                Notice(Tone.Warning, "Your index number ${bound.indexNumber} is not on this module's list. Ask your lecturer to add you.")
-            } else {
+            if (module != null) {
                 LuCard {
-                    Text("Register for ${module.displayName} as ${shownName.uppercase()} (${bound.indexNumber})?", style = MaterialTheme.typography.bodyLarge)
+                    Text(module.shortName, style = MonoText, color = Lumora.colors.inkMuted)
+                    Text(module.name, style = MaterialTheme.typography.titleMedium)
+                    Text(module.lecturer, style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
                 }
             }
+
+            if (done != null || p.alreadyRegistered) {
+                if (done == null) Notice(Tone.Success, "You're already registered for this module.")
+                PrimaryButton("Go to my modules", onClick = onDone)
+                return@Column
+            }
+            if (p.verdict != "OK" || module == null) {
+                SecondaryButton("Scan again", onClick = onBack, modifier = Modifier.fillMaxWidth())
+                return@Column
+            }
+
+            if (bound == null) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    OutlinedTextField(
+                        value = index,
+                        onValueChange = { index = it.uppercase().take(7); indexError = null },
+                        label = { Text("Index number") },
+                        singleLine = true,
+                        isError = indexError != null,
+                        supportingText = indexError?.let { { Text(it) } },
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = MonoText.fontFamily),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false, imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it; nameError = null },
+                        label = { Text("Name") },
+                        singleLine = true,
+                        isError = nameError != null,
+                        supportingText = nameError?.let { { Text(it) } },
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, autoCorrectEnabled = false, imeAction = ImeAction.Done),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        "Type both exactly as on your lecturer's class list. Capitals, spaces and dots don't matter.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Lumora.colors.inkMuted,
+                    )
+                }
+                val linkTo = Identity.normaliseIndex(index).ifEmpty { "your index number" }
+                Notice(Tone.Tip, "This phone will be linked to $linkTo. If you change phones, ask your lecturer to reset it.", lead = "One phone, one student.")
+            } else {
+                val shownName = p.nameOnList ?: bound.name ?: ""
+                if (p.nameOnList == null) {
+                    Notice(Tone.Warning, "Your index number ${bound.indexNumber} is not on this module's list. Ask your lecturer to add you.")
+                } else {
+                    LuCard {
+                        Text("Register for ${module.displayName} as ${shownName.uppercase()} (${bound.indexNumber})?", style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+
+            error?.let { Notice(Tone.Danger, it) }
+
+            PrimaryButton(
+                "Confirm with fingerprint or PIN",
+                onClick = ::submit,
+                busy = busy,
+                enabled = bound == null || p.nameOnList != null,
+                icon = Icons.Outlined.Fingerprint,
+            )
         }
-
-        error?.let { Notice(Tone.Danger, it) }
-
-        PrimaryButton(
-            "Confirm with fingerprint or PIN",
-            onClick = ::submit,
-            busy = busy,
-            enabled = bound == null || p.nameOnList != null,
-            icon = Icons.Outlined.Fingerprint,
-        )
     }
 }

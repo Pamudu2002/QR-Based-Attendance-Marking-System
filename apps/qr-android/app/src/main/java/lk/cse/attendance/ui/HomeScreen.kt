@@ -65,6 +65,7 @@ fun HomeScreen(
     var revoked by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
+    var refreshing by remember { mutableStateOf(false) }
 
     LifecycleResumeEffect(Unit) {
         reload++
@@ -83,6 +84,8 @@ fun HomeScreen(
             needsLogin = true
         } catch (e: ApiException) {
             if (e.isRevoked) revoked = true else error = e.message
+        } finally {
+            refreshing = false
         }
     }
 
@@ -96,92 +99,102 @@ fun HomeScreen(
             }
         },
     ) { padding ->
-        LazyColumn(
+        Refreshable(
+            refreshing = refreshing,
+            onRefresh = {
+                refreshing = true
+                reload++
+                onUpload()
+            },
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item {
-                Column {
-                    Text(formatToday(), style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
-                    val first = me?.student?.name?.split(" ")?.firstOrNull()
-                    // A long press opens the hidden experiment settings (PLAN §5.1 item 7).
-                    Text(
-                        if (first != null) "${greeting()}, $first" else greeting(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.combinedClickable(onClick = {}, onLongClick = onExperiment),
-                    )
-                }
-            }
-
-            when {
-                revoked -> item {
-                    Notice(Tone.Danger, "Your lecturer reset this phone, for example because you got a new one. Set up the app again.", lead = "This phone was reset.") {
-                        SecondaryButton("Set up again", onClick = onSetUpAgain)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                item {
+                    Column {
+                        Text(formatToday(), style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
+                        val first = me?.student?.name?.split(" ")?.firstOrNull()
+                        // A long press opens the hidden experiment settings (PLAN §5.1 item 7).
+                        Text(
+                            if (first != null) "${greeting()}, $first" else greeting(),
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.combinedClickable(onClick = {}, onLongClick = onExperiment),
+                        )
                     }
                 }
-                needsLogin -> item {
-                    Notice(Tone.Info, "Unlock the app with your fingerprint or PIN to see your modules.") {
-                        SecondaryButton("Confirm it's you", onClick = {
-                            scope.launch {
-                                try {
-                                    session.logIn(activity)
-                                    reload++
-                                } catch (e: Exception) {
-                                    error = friendlyMessage(e).takeUnless { e is lk.cse.attendance.security.AuthCancelledException }
-                                }
-                            }
-                        })
-                    }
-                }
-                modules == null && error == null -> item { Loading() }
-            }
-            error?.let { msg -> item { Notice(Tone.Danger, msg) } }
 
-            val list = modules
-            if (list != null && !revoked) {
-                if (list.isEmpty()) {
-                    item {
-                        LuCard {
-                            Text("Register for your first module", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                "In your first class, scan the registration QR on the projector and type your index number and name as on the class list.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Lumora.colors.inkMuted,
-                            )
-                            PrimaryButton("Scan the registration QR", onClick = onScan, icon = Icons.Outlined.QrCodeScanner, modifier = Modifier.padding(top = 8.dp))
+                when {
+                    revoked -> item {
+                        Notice(Tone.Danger, "Your lecturer reset this phone, for example because you got a new one. Set up the app again.", lead = "This phone was reset.") {
+                            SecondaryButton("Set up again", onClick = onSetUpAgain)
                         }
                     }
-                } else {
-                    nextClass(list)?.let { (m, s) ->
+                    needsLogin -> item {
+                        Notice(Tone.Info, "Unlock the app with your fingerprint or PIN to see your modules.") {
+                            SecondaryButton("Confirm it's you", onClick = {
+                                scope.launch {
+                                    try {
+                                        session.logIn(activity)
+                                        reload++
+                                    } catch (e: Exception) {
+                                        error = friendlyMessage(e).takeUnless { e is lk.cse.attendance.security.AuthCancelledException }
+                                    }
+                                }
+                            })
+                        }
+                    }
+                    modules == null && error == null -> item { Loading() }
+                }
+                error?.let { msg -> item { Notice(Tone.Danger, msg) } }
+
+                val list = modules
+                if (list != null && !revoked) {
+                    if (list.isEmpty()) {
                         item {
                             LuCard {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Next class", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted, modifier = Modifier.weight(1f))
-                                    StatusBadge(formatDay(s.startsAt), Tone.Brand)
-                                }
-                                Text(m.displayName.substringBefore(" - "), style = MonoText, color = Lumora.colors.inkMuted)
-                                Text(s.title, style = MaterialTheme.typography.titleMedium)
-                                Text("${formatTime(s.startsAt)} – ${formatTime(s.endsAt)} · ${s.venue}", style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
-                                PrimaryButton("Scan", onClick = onScan, icon = Icons.Outlined.QrCodeScanner, modifier = Modifier.padding(top = 8.dp))
+                                Text("Register for your first module", style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    "In your first class, scan the registration QR on the projector and type your index number and name as on the class list.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Lumora.colors.inkMuted,
+                                )
+                                PrimaryButton("Scan the registration QR", onClick = onScan, icon = Icons.Outlined.QrCodeScanner, modifier = Modifier.padding(top = 8.dp))
                             }
                         }
-                    }
+                    } else {
+                        nextClass(list)?.let { (m, s) ->
+                            item {
+                                LuCard {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Next class", style = MaterialTheme.typography.labelMedium, color = Lumora.colors.inkMuted, modifier = Modifier.weight(1f))
+                                        StatusBadge(formatDay(s.startsAt), Tone.Brand)
+                                    }
+                                    Text(m.displayName.substringBefore(" - "), style = MonoText, color = Lumora.colors.inkMuted)
+                                    Text(s.title, style = MaterialTheme.typography.titleMedium)
+                                    Text("${formatTime(s.startsAt)} – ${formatTime(s.endsAt)} · ${s.venue}", style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
+                                    PrimaryButton("Scan", onClick = onScan, icon = Icons.Outlined.QrCodeScanner, modifier = Modifier.padding(top = 8.dp))
+                                }
+                            }
+                        }
 
-                    item { OverallStrip(list) }
+                        item { OverallStrip(list) }
 
-                    list.filter { AttendanceRule.isBelow(it.attendancePct) }.forEach { m ->
+                        list.filter { AttendanceRule.isBelow(it.attendancePct) }.forEach { m ->
+                            item {
+                                Notice(Tone.Warning, "You're at ${m.attendancePct}%. Attend every class you can.", lead = "${m.code} is below 80%.")
+                            }
+                        }
+
                         item {
-                            Notice(Tone.Warning, "You're at ${m.attendancePct}%. Attend every class you can.", lead = "${m.code} is below 80%.")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("My modules", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                            }
                         }
+                        items(list, key = { it.id }) { m -> ModuleRow(m, onClick = { onModule(m.id) }) }
                     }
-
-                    item {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("My modules", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                        }
-                    }
-                    items(list, key = { it.id }) { m -> ModuleRow(m, onClick = { onModule(m.id) }) }
                 }
             }
         }

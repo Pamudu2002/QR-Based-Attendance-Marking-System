@@ -25,6 +25,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,56 +44,64 @@ import lk.cse.attendance.ui.theme.MonoText
 fun SettingsScreen(session: Session, activity: MainActivity, onBack: () -> Unit, onLog: () -> Unit, onSetUpAgain: () -> Unit) {
     val prefs = session.prefs
     var confirmReset by remember { mutableStateOf(false) }
+    // Nothing here comes from the server; a swipe just reads the phone's values again.
+    var shown by remember { mutableIntStateOf(0) }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Lumora.colors.surfaceSunken)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    Refreshable(
+        refreshing = false,
+        onRefresh = { shown++ },
+        modifier = Modifier.fillMaxSize().background(Lumora.colors.surfaceSunken).statusBarsPadding(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back") }
-            Text("Settings", style = MaterialTheme.typography.titleMedium)
-        }
-
-        LuCard {
-            Text("Appearance", style = MaterialTheme.typography.titleSmall)
-            val options = listOf("system" to "Phone setting", "light" to "Light", "dark" to "Dark")
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                options.forEachIndexed { i, (value, label) ->
-                    SegmentedButton(
-                        selected = activity.theme == value,
-                        onClick = { activity.updateTheme(value) },
-                        shape = SegmentedButtonDefaults.itemShape(i, options.size),
-                    ) { Text(label) }
+        key(shown) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .navigationBarsPadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back") }
+                    Text("Settings", style = MaterialTheme.typography.titleMedium)
                 }
+
+                LuCard {
+                    Text("Appearance", style = MaterialTheme.typography.titleSmall)
+                    val options = listOf("system" to "Phone setting", "light" to "Light", "dark" to "Dark")
+                    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        options.forEachIndexed { i, (value, label) ->
+                            SegmentedButton(
+                                selected = activity.theme == value,
+                                onClick = { activity.updateTheme(value) },
+                                shape = SegmentedButtonDefaults.itemShape(i, options.size),
+                            ) { Text(label) }
+                        }
+                    }
+                }
+
+                LuCard {
+                    Text("This phone", style = MaterialTheme.typography.titleSmall)
+                    InfoRow("Device", session.deviceId ?: "Not set up")
+                    InfoRow("Key", prefs.keyLevel ?: "–")
+                    InfoRow(
+                        "Unlock",
+                        when (session.unlock) {
+                            KeyUnlock.PER_USE -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "Fingerprint, face or PIN each time" else "Fingerprint each time"
+                            KeyUnlock.TIMED -> "PIN, pattern or password"
+                        },
+                    )
+                    InfoRow("Android", "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
+                    InfoRow("Model", "${Build.MANUFACTURER} ${Build.MODEL}")
+                    InfoRow("App", BuildConfig.VERSION_NAME)
+                    InfoRow("Server", BuildConfig.SERVER_URL.removePrefix("https://"))
+                }
+
+                SecondaryButton("Attempt log", onClick = onLog, modifier = Modifier.fillMaxWidth())
+
+                SecondaryButton("Set up this phone again", onClick = { confirmReset = true }, danger = true, modifier = Modifier.fillMaxWidth())
             }
         }
-
-        LuCard {
-            Text("This phone", style = MaterialTheme.typography.titleSmall)
-            InfoRow("Device", session.deviceId ?: "Not set up")
-            InfoRow("Key", prefs.keyLevel ?: "–")
-            InfoRow(
-                "Unlock",
-                when (session.unlock) {
-                    KeyUnlock.PER_USE -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) "Fingerprint, face or PIN each time" else "Fingerprint each time"
-                    KeyUnlock.TIMED -> "PIN, pattern or password"
-                },
-            )
-            InfoRow("Android", "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
-            InfoRow("Model", "${Build.MANUFACTURER} ${Build.MODEL}")
-            InfoRow("App", BuildConfig.VERSION_NAME)
-            InfoRow("Server", BuildConfig.SERVER_URL.removePrefix("https://"))
-        }
-
-        SecondaryButton("Attempt log", onClick = onLog, modifier = Modifier.fillMaxWidth())
-
-        SecondaryButton("Set up this phone again", onClick = { confirmReset = true }, danger = true, modifier = Modifier.fillMaxWidth())
     }
 
     if (confirmReset) {

@@ -14,8 +14,8 @@ android {
         applicationId = "lk.cse.attendance"
         minSdk = 23
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.4.0"
+        versionCode = 3
+        versionName = "0.4.1"
         // Default server; editable in Settings.
         buildConfigField("String", "SERVER_URL", "\"https://qr-based-attendance-marking-system.vercel.app\"")
     }

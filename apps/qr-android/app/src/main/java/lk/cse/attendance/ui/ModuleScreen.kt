@@ -57,87 +57,100 @@ fun ModuleScreen(session: Session, activity: MainActivity, moduleId: String, onB
     var needsLogin by remember { mutableStateOf(false) }
     var showUpcoming by remember { mutableStateOf(false) }
     var reload by remember { mutableIntStateOf(0) }
+    var refreshing by remember { mutableStateOf(false) }
 
     LaunchedEffect(reload) {
         try {
             data = session.api.module(moduleId)
             needsLogin = false
+            error = null
         } catch (e: NeedsLoginException) {
             needsLogin = true
         } catch (e: Exception) {
             error = friendlyMessage(e)
+        } finally {
+            refreshing = false
         }
     }
 
-    LazyColumn(
+    Refreshable(
+        refreshing = refreshing,
+        onRefresh = {
+            refreshing = true
+            reload++
+        },
         modifier = Modifier.fillMaxSize().background(Lumora.colors.surfaceSunken).statusBarsPadding(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back") }
-                data?.let { StatusBadge(it.module.shortName, Tone.Neutral) }
-            }
-        }
-        if (needsLogin) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             item {
-                Notice(Tone.Info, "Unlock the app with your fingerprint or PIN to continue.") {
-                    SecondaryButton("Confirm it's you", onClick = {
-                        scope.launch { runCatching { session.logIn(activity) }.onSuccess { reload++ } }
-                    })
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back") }
+                    data?.let { StatusBadge(it.module.shortName, Tone.Neutral) }
                 }
             }
-        }
-        error?.let { item { Notice(Tone.Danger, it) } }
-
-        val d = data
-        if (d == null) {
-            if (error == null && !needsLogin) item { Loading() }
-            return@LazyColumn
-        }
-
-        item {
-            Column {
-                Text(d.module.name, style = MaterialTheme.typography.headlineSmall)
-                val next = d.upcoming.firstOrNull()
-                val detail = listOfNotNull(d.module.lecturer, next?.let { "Next: ${formatDay(it.startsAt)} ${formatTime(it.startsAt)} · ${it.venue}" })
-                Text(detail.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
+            if (needsLogin) {
+                item {
+                    Notice(Tone.Info, "Unlock the app with your fingerprint or PIN to continue.") {
+                        SecondaryButton("Confirm it's you", onClick = {
+                            scope.launch { runCatching { session.logIn(activity) }.onSuccess { reload++ } }
+                        })
+                    }
+                }
             }
-        }
+            error?.let { item { Notice(Tone.Danger, it) } }
 
-        item { Summary(d) }
-
-        item {
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    selected = !showUpcoming,
-                    onClick = { showUpcoming = false },
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
-                ) { Text("History") }
-                SegmentedButton(
-                    selected = showUpcoming,
-                    onClick = { showUpcoming = true },
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
-                ) { Text("Upcoming ${d.upcoming.size}") }
+            val d = data
+            if (d == null) {
+                if (error == null && !needsLogin) item { Loading() }
+                return@LazyColumn
             }
-        }
 
-        val rows = if (showUpcoming) d.upcoming else d.history
-        if (rows.isEmpty()) {
             item {
-                Text(
-                    if (showUpcoming) "No upcoming classes." else "No classes yet.",
-                    color = Lumora.colors.inkMuted,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Column {
+                    Text(d.module.name, style = MaterialTheme.typography.headlineSmall)
+                    val next = d.upcoming.firstOrNull()
+                    val detail = listOfNotNull(d.module.lecturer, next?.let { "Next: ${formatDay(it.startsAt)} ${formatTime(it.startsAt)} · ${it.venue}" })
+                    Text(detail.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
+                }
             }
-        } else {
+
+            item { Summary(d) }
+
             item {
-                LuCard(padding = false) {
-                    rows.forEachIndexed { i, s ->
-                        if (i > 0) HorizontalDivider(color = Lumora.colors.line)
-                        SessionRow(s)
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = !showUpcoming,
+                        onClick = { showUpcoming = false },
+                        shape = SegmentedButtonDefaults.itemShape(0, 2),
+                    ) { Text("History") }
+                    SegmentedButton(
+                        selected = showUpcoming,
+                        onClick = { showUpcoming = true },
+                        shape = SegmentedButtonDefaults.itemShape(1, 2),
+                    ) { Text("Upcoming ${d.upcoming.size}") }
+                }
+            }
+
+            val rows = if (showUpcoming) d.upcoming else d.history
+            if (rows.isEmpty()) {
+                item {
+                    Text(
+                        if (showUpcoming) "No upcoming classes." else "No classes yet.",
+                        color = Lumora.colors.inkMuted,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            } else {
+                item {
+                    LuCard(padding = false) {
+                        rows.forEachIndexed { i, s ->
+                            if (i > 0) HorizontalDivider(color = Lumora.colors.line)
+                            SessionRow(s)
+                        }
                     }
                 }
             }

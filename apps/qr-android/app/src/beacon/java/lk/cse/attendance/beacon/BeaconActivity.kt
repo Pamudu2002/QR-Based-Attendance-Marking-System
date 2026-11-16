@@ -66,7 +66,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import lk.cse.attendance.data.ApiException
 import lk.cse.attendance.scan.QrAnalyzer
 import lk.cse.attendance.ui.BrandName
@@ -74,6 +76,7 @@ import lk.cse.attendance.ui.CameraPreview
 import lk.cse.attendance.ui.LuCard
 import lk.cse.attendance.ui.Notice
 import lk.cse.attendance.ui.PrimaryButton
+import lk.cse.attendance.ui.Refreshable
 import lk.cse.attendance.ui.SecondaryButton
 import lk.cse.attendance.ui.StatusBadge
 import lk.cse.attendance.ui.Tone
@@ -157,61 +160,69 @@ private fun LinkScreen(app: BeaconApp, onLinked: () -> Unit) {
         return
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Lumora.colors.surface)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    // A swipe checks the permissions again, for example after allowing them in Android settings.
+    Refreshable(
+        refreshing = false,
+        onRefresh = {
+            camera = granted(context, Manifest.permission.CAMERA)
+            nearby = Broadcaster.hasPermission(context)
+            notifications = !needsNotifications || granted(context, Manifest.permission.POST_NOTIFICATIONS)
+        },
+        modifier = Modifier.fillMaxSize().background(Lumora.colors.surface).statusBarsPadding(),
     ) {
-        Column {
-            BrandName()
-            Text("Beacon", style = MaterialTheme.typography.labelLarge, color = Lumora.colors.brand)
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Turn this phone into a classroom beacon", style = MaterialTheme.typography.headlineSmall.copy(fontSize = MaterialTheme.typography.titleLarge.fontSize))
-            Text(
-                "Leave it on your desk during class. It broadcasts while check-in is open, so students' phones can prove they're in the room.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Lumora.colors.inkMuted,
-            )
-        }
+        Column(
+            Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Column {
+                BrandName()
+                Text("Beacon", style = MaterialTheme.typography.labelLarge, color = Lumora.colors.brand)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Turn this phone into a classroom beacon", style = MaterialTheme.typography.headlineSmall.copy(fontSize = MaterialTheme.typography.titleLarge.fontSize))
+                Text(
+                    "Leave it on your desk during class. It broadcasts while check-in is open, so students' phones can prove they're in the room.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Lumora.colors.inkMuted,
+                )
+            }
 
-        LuCard(padding = false) {
-            PermissionRow(Icons.Outlined.CameraAlt, "Camera", "To scan the link code once", done = camera) {
-                TextButton(onClick = { cameraLauncher.launch(Manifest.permission.CAMERA) }) { Text("Allow") }
-            }
-            HorizontalDivider(color = Lumora.colors.line)
-            PermissionRow(
-                Icons.Outlined.Bluetooth,
-                "Bluetooth",
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) "Nearby devices, to broadcast the beacon" else "No extra permission needed",
-                done = nearby,
-            ) {
-                TextButton(onClick = { nearbyLauncher.launch(Broadcaster.permissions()) }) { Text("Allow") }
-            }
-            if (needsNotifications) {
+            LuCard(padding = false) {
+                PermissionRow(Icons.Outlined.CameraAlt, "Camera", "To scan the link code once", done = camera) {
+                    TextButton(onClick = { cameraLauncher.launch(Manifest.permission.CAMERA) }) { Text("Allow") }
+                }
                 HorizontalDivider(color = Lumora.colors.line)
-                PermissionRow(Icons.Outlined.Notifications, "Notifications", "Shows when the beacon is broadcasting", done = notifications) {
-                    TextButton(onClick = { notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) { Text("Allow") }
+                PermissionRow(
+                    Icons.Outlined.Bluetooth,
+                    "Bluetooth",
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) "Nearby devices, to broadcast the beacon" else "No extra permission needed",
+                    done = nearby,
+                ) {
+                    TextButton(onClick = { nearbyLauncher.launch(Broadcaster.permissions()) }) { Text("Allow") }
+                }
+                if (needsNotifications) {
+                    HorizontalDivider(color = Lumora.colors.line)
+                    PermissionRow(Icons.Outlined.Notifications, "Notifications", "Shows when the beacon is broadcasting", done = notifications) {
+                        TextButton(onClick = { notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) { Text("Allow") }
+                    }
                 }
             }
+
+            Notice(Tone.Info, "In the portal, open Beacon phones and tap Show link code. The code works once and expires after 2 minutes.", lead = "Link code")
+            error?.let { Notice(Tone.Danger, it) }
+
+            PrimaryButton(
+                "Scan the link code",
+                onClick = { if (camera) scanning = true else cameraLauncher.launch(Manifest.permission.CAMERA) },
+                icon = Icons.Outlined.QrCodeScanner,
+                busy = busy,
+            )
         }
-
-        Notice(Tone.Info, "In the portal, open Beacon phones and tap Show link code. The code works once and expires after 2 minutes.", lead = "Link code")
-        error?.let { Notice(Tone.Danger, it) }
-
-        PrimaryButton(
-            "Scan the link code",
-            onClick = { if (camera) scanning = true else cameraLauncher.launch(Manifest.permission.CAMERA) },
-            icon = Icons.Outlined.QrCodeScanner,
-            busy = busy,
-        )
     }
-
 }
 
 /** Camera scan for the link code, with the same decoder as the student app. */
@@ -244,7 +255,9 @@ private fun LinkScanner(onCode: (String) -> Unit, onClose: () -> Unit) {
 @Composable
 private fun MainScreen(app: BeaconApp, onUnlinked: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val ui by BeaconService.ui.collectAsState()
+    var refreshing by remember { mutableStateOf(false) }
     var onDuty by remember { mutableStateOf(app.prefs.onDuty) }
     var power by remember { mutableStateOf(app.prefs.power) }
     var confirmUnlink by remember { mutableStateOf(false) }
@@ -263,76 +276,93 @@ private fun MainScreen(app: BeaconApp, onUnlinked: () -> Unit) {
         onUnlinked()
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Lumora.colors.surfaceSunken)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    // A swipe asks the server for the open check-in now and waits for its answer.
+    // While paused there is nothing to ask, so it only redraws.
+    fun refresh() {
+        if (!onDuty) return
+        refreshing = true
+        scope.launch {
+            val before = BeaconService.polls.value
+            BeaconService.refresh(context)
+            withTimeoutOrNull(10_000) { BeaconService.polls.first { it > before } }
+            refreshing = false
+        }
+    }
+
+    Refreshable(
+        refreshing = refreshing,
+        onRefresh = ::refresh,
+        modifier = Modifier.fillMaxSize().background(Lumora.colors.surfaceSunken).statusBarsPadding(),
     ) {
-        Column {
-            BrandName()
-            Text("Beacon · linked to ${app.prefs.lecturer ?: "your account"}", style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
-        }
-
-        ui.unlinked?.let { msg ->
-            Notice(Tone.Danger, msg, lead = "This phone was unlinked.") {
-                SecondaryButton("Link again", onClick = ::unlink)
+        Column(
+            Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Column {
+                BrandName()
+                Text("Beacon · linked to ${app.prefs.lecturer ?: "your account"}", style = MaterialTheme.typography.bodyMedium, color = Lumora.colors.inkMuted)
             }
-        }
 
-        StatusCard(ui, onDuty)
-
-        when {
-            !onDuty -> Unit
-            ui.problem == Problem.BLUETOOTH_OFF ->
-                SecondaryButton("Open Bluetooth settings", onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }, modifier = Modifier.fillMaxWidth())
-            ui.problem == Problem.NO_PERMISSION ->
-                SecondaryButton("Allow Nearby devices", onClick = { nearbyLauncher.launch(Broadcaster.permissions()) }, modifier = Modifier.fillMaxWidth())
-            else -> Unit
-        }
-
-        LuCard {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Beacon on", style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        if (onDuty) "Starts and stops with check-in in the portal" else "Paused: it won't broadcast",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Lumora.colors.inkMuted,
-                    )
-                }
-                Switch(checked = onDuty, onCheckedChange = {
-                    onDuty = it
-                    app.prefs.onDuty = it
-                    if (it) BeaconService.start(context) else BeaconService.stop(context)
-                })
-            }
-        }
-
-        LuCard {
-            Text("Range", style = MaterialTheme.typography.titleSmall)
-            val options = listOf("LOW" to "Small room", "MEDIUM" to "Hall", "HIGH" to "Large hall")
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                options.forEachIndexed { i, (value, label) ->
-                    SegmentedButton(
-                        selected = power == value,
-                        onClick = {
-                            power = value
-                            app.prefs.power = value
-                        },
-                        shape = SegmentedButtonDefaults.itemShape(i, options.size),
-                    ) { Text(label) }
+            ui.unlinked?.let { msg ->
+                Notice(Tone.Danger, msg, lead = "This phone was unlinked.") {
+                    SecondaryButton("Link again", onClick = ::unlink)
                 }
             }
-            Text("Higher reaches the back rows but leaks further into corridors. Set it after testing in the hall.", style = MaterialTheme.typography.bodySmall, color = Lumora.colors.inkMuted)
-        }
 
-        Notice(Tone.Tip, "keep this phone on a charger during class, with Bluetooth on. You can lock the screen.", lead = "Tip:")
-        SecondaryButton("Unlink this phone", onClick = { confirmUnlink = true }, danger = true, modifier = Modifier.fillMaxWidth())
+            StatusCard(ui, onDuty)
+
+            when {
+                !onDuty -> Unit
+                ui.problem == Problem.BLUETOOTH_OFF ->
+                    SecondaryButton("Open Bluetooth settings", onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }, modifier = Modifier.fillMaxWidth())
+                ui.problem == Problem.NO_PERMISSION ->
+                    SecondaryButton("Allow Nearby devices", onClick = { nearbyLauncher.launch(Broadcaster.permissions()) }, modifier = Modifier.fillMaxWidth())
+                else -> Unit
+            }
+
+            LuCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Beacon on", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            if (onDuty) "Starts and stops with check-in in the portal" else "Paused: it won't broadcast",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Lumora.colors.inkMuted,
+                        )
+                    }
+                    Switch(checked = onDuty, onCheckedChange = {
+                        onDuty = it
+                        app.prefs.onDuty = it
+                        if (it) BeaconService.start(context) else BeaconService.stop(context)
+                    })
+                }
+            }
+
+            LuCard {
+                Text("Range", style = MaterialTheme.typography.titleSmall)
+                val options = listOf("LOW" to "Small room", "MEDIUM" to "Hall", "HIGH" to "Large hall")
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    options.forEachIndexed { i, (value, label) ->
+                        SegmentedButton(
+                            selected = power == value,
+                            onClick = {
+                                power = value
+                                app.prefs.power = value
+                            },
+                            shape = SegmentedButtonDefaults.itemShape(i, options.size),
+                        ) { Text(label) }
+                    }
+                }
+                Text("Higher reaches the back rows but leaks further into corridors. Set it after testing in the hall.", style = MaterialTheme.typography.bodySmall, color = Lumora.colors.inkMuted)
+            }
+
+            Notice(Tone.Tip, "keep this phone on a charger during class, with Bluetooth on. You can lock the screen.", lead = "Tip:")
+            SecondaryButton("Unlink this phone", onClick = { confirmUnlink = true }, danger = true, modifier = Modifier.fillMaxWidth())
+        }
     }
 
     if (confirmUnlink) {

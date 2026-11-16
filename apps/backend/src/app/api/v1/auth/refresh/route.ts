@@ -35,6 +35,8 @@ export const POST = handler(async (req) => {
       refreshToken: rotated.refreshToken,
     };
   }
+  // Admin tokens refresh at /auth/admin/refresh only.
+  if (!("lecturerId" in rotated.owner)) throw ApiError.unauthorized();
   await setLecturerSession(rotated.owner.lecturerId, rotated.refreshToken, rotated.persistent);
   return { ok: true };
 });

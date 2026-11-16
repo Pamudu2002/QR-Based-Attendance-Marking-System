@@ -25,16 +25,23 @@ async function send(path: string, opts: Options) {
 export async function api<T = unknown>(path: string, opts: Options = {}): Promise<T> {
   let res = await send(path, opts);
   if (res.status === 401 && !path.startsWith("/auth/")) {
-    const refreshed = await fetch("/api/v1/auth/refresh", { method: "POST", credentials: "same-origin" });
+    // Admin API calls use the admin session; everything else the lecturer's.
+    const admin = path.startsWith("/admin/");
+    const refreshed = await fetch(admin ? "/api/v1/auth/admin/refresh" : "/api/v1/auth/refresh", {
+      method: "POST",
+      credentials: "same-origin",
+    });
     if (refreshed.ok) res = await send(path, opts);
     else {
-      window.location.href = `/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `${admin ? "/admin/login" : "/login"}?next=${next}`;
     }
   }
 
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const err = data?.error ?? {};
+    if (err.code === "PASSWORD_CHANGE_REQUIRED") window.location.href = "/change-password";
     throw new ClientApiError(
       res.status,
       err.code ?? "ERROR",

@@ -35,7 +35,7 @@ The **experiment** runs on top of this system.
 ## 2. Real-world flow
 
 ### 2.1 Lecturer (web portal, on a laptop)
-1. **Sign up or log in** with email and password.
+1. **Log in** with the university email the admin added and the temporary password the admin sent, then **set a new password** (first login only). There is no public sign-up: the department admin creates every lecturer account in the **admin portal** (`/admin`).
 2. **Create a module** with intake, semester, module code and name. It is shown like Moodle: **`In22-S7-CS4473 - Mobile Computing`**. A lecturer can have **many modules**.
 3. **Add students** to the module. Only **index number** and **name** are needed:
    - one at a time, or
@@ -115,7 +115,8 @@ The **experiment** runs on top of this system.
 ### 4.1 Pages
 | Page | Content |
 |---|---|
-| `/login`, `/signup` | Email + password. Sign-up can be limited to allowed email domains (`ALLOWED_LECTURER_DOMAINS`, e.g. `uom.lk`) |
+| `/login` | Email + password. No sign-up: accounts come from the admin portal |
+| `/change-password` | First login with a temporary password: the lecturer sets their own password. Every other page and API call is blocked until they do |
 | `/modules` | Cards like Moodle: `In22-S7-CS4473 - Mobile Computing`, number of students, registered count, next session. **New module** button |
 | `/modules/new`, `/modules/[id]/edit` | Intake (`In22`), semester (`S7`), code (`CS4473`), name (`Mobile Computing`) |
 | `/modules/[id]` · **Students** tab | Roster table: index number, name, **Registered ✓ / Not registered**, registered at, phone model. Filters: all / registered / not registered. Actions: add student, **Import CSV**, edit name, remove, **reset device** |
@@ -128,6 +129,16 @@ The **experiment** runs on top of this system.
 | `/experiment` | Experiment controls: create check-in windows with a chosen T and mode, export attempts CSV (see §9) |
 | `/beacons` | **Beacon phones**: link a phone with a one-time QR (2 min), each phone's live state (ready, broadcasting, Bluetooth off, app closed), remove |
 | `/sessions/[id]` · Start check-in | **Require the classroom beacon** tick box (on when a beacon phone is linked) and the beacon phone's live state; while open, how many phones heard it |
+
+### 4.4 Admin portal
+A separate web login at `/admin/login`, with its own session cookies. Admin accounts are made only with the CLI (`pnpm --filter @attendance/backend admin:create`), never in the portal.
+
+| Page | Content |
+|---|---|
+| `/admin` | **Lecturers**: name, email, status (*Active* / *Waiting for first login* / *Temporary password expired*), module count. **Add a lecturer** (name + university email, limited by `ALLOWED_LECTURER_DOMAINS`, e.g. `uom.lk`) and **Send new password** per row |
+
+- Adding a lecturer or sending a new password makes a random **temporary password** (16 characters, no look-alike characters). It is shown **once** with *Copy password* and *Open in email* (a `mailto:` message from the admin's own mail app); only its hash is stored.
+- A temporary password works for **7 days**. The lecturer must replace it at first login. Sending a new password signs the lecturer out everywhere.
 
 ### 4.2 Adding students by CSV
 - **Template:** `index_number,name`, e.g. `220366X,Lokuhewa P. C.`. The importer also accepts a Moodle participants export if its columns can be mapped (ID number → index, first + last name → name).
@@ -328,8 +339,9 @@ seq     = floor((server now − window.startedAt) / 5 s)
 
 | Table | Key fields |
 |---|---|
-| `Lecturer` | id, name, email (unique), passwordHash, createdAt |
-| `RefreshToken` | as in the existing code (hash, familyId, expiry, revoked); owner is a lecturer or a device |
+| `Admin` | id, name, email (unique), passwordHash, createdAt. Made with the `admin:create` CLI |
+| `Lecturer` | id, name, email (unique), passwordHash, mustChangePassword, tempPasswordExpiresAt, createdByAdminId, createdAt |
+| `RefreshToken` | as in the existing code (hash, familyId, expiry, revoked); owner is a lecturer, an admin or a device |
 | `Module` | id, lecturerId, intake, semester, code, name, registrationOpen, regSecret, regIntervalSec (30), createdAt. Unique (lecturerId, intake, semester, code) |
 | `Student` | id, indexNumber (unique), createdAt |
 | `RosterEntry` | id, moduleId, studentId, rosterName, addedVia (`MANUAL`/`CSV`), addedAt, **registeredAt** (null = not registered), registeredDeviceId. Unique (moduleId, studentId) |
@@ -347,9 +359,20 @@ seq     = floor((server now − window.startedAt) / 5 s)
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/auth/lecturer/signup` · `/auth/lecturer/login` | Create account / log in |
+| POST | `/auth/lecturer/login` | Log in (returns `mustChangePassword`; an expired temporary password gives `TEMP_PASSWORD_EXPIRED`) |
+| POST | `/auth/lecturer/change-password` | `{ currentPassword, newPassword }`: sets the lecturer's own password and ends their other sessions |
 | POST | `/auth/refresh` · `/auth/logout` | Rotate refresh token / log out |
 | GET | `/me` | Current lecturer |
+
+While a lecturer still has a temporary password, every lecturer route except the password change returns `403 PASSWORD_CHANGE_REQUIRED`.
+
+**Admin** (separate `typ: admin` token and cookies)
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/auth/admin/login` · `/auth/admin/logout` · `/auth/admin/refresh` | Admin session |
+| GET · POST | `/admin/lecturers` | List lecturers / add one (returns the temporary password once) |
+| POST | `/admin/lecturers/{id}/reset-password` | New temporary password (returned once); signs the lecturer out |
 
 **Modules and students** (lecturer; owner only)
 

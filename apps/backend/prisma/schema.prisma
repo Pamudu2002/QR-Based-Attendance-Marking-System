@@ -12,16 +12,34 @@ datasource db {
 
 // ── Lecturers and auth ──────────────────────────────────────────────────────
 
-model Lecturer {
+/// Creates lecturer accounts. Admins are made with `pnpm admin:create`, never in the portal.
+model Admin {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
 
-  modules       Module[]
-  refreshTokens RefreshToken[]
-  beaconPhones  BeaconPhone[]
+  refreshTokens    RefreshToken[]
+  createdLecturers Lecturer[]
+}
+
+model Lecturer {
+  id                    String    @id @default(cuid())
+  name                  String
+  email                 String    @unique
+  passwordHash          String
+  /// true while the lecturer still has the admin's temporary password
+  mustChangePassword    Boolean   @default(false)
+  /// The temporary password stops working after this
+  tempPasswordExpiresAt DateTime?
+  createdByAdminId      String?
+  createdAt             DateTime  @default(now())
+
+  createdByAdmin Admin?         @relation(fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  modules        Module[]
+  refreshTokens  RefreshToken[]
+  beaconPhones   BeaconPhone[]
 }
 
 /// A lecturer's Android phone running CSE Attendance Beacon (PLAN §6.5). It
@@ -48,12 +66,13 @@ model BeaconPhone {
 }
 
 /// Opaque refresh token, stored hashed. Rotated on every use; reusing a
-/// rotated token revokes the whole family. Owner is a lecturer or a device.
+/// rotated token revokes the whole family. Owner is a lecturer, an admin or a device.
 model RefreshToken {
   id         String    @id @default(cuid())
   tokenHash  String    @unique
   familyId   String
   lecturerId String?
+  adminId    String?
   deviceId   String?
   /// false = browser-session cookie ("Keep me logged in" unchecked)
   persistent Boolean   @default(true)
@@ -62,6 +81,7 @@ model RefreshToken {
   createdAt  DateTime  @default(now())
 
   lecturer Lecturer? @relation(fields: [lecturerId], references: [id], onDelete: Cascade)
+  admin    Admin?    @relation(fields: [adminId], references: [id], onDelete: Cascade)
   device   Device?   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   @@index([familyId])

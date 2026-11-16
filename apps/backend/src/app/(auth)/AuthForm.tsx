@@ -9,9 +9,15 @@ import { ico } from "@/components/icon";
 import { api, ClientApiError } from "@/lib/client-api";
 import { safeNext } from "@/lib/safe-next";
 
-type Mode = "login" | "signup";
+type Audience = "lecturer" | "admin";
 
-export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
+const COPY: Record<Audience, { endpoint: string; title: string; sub: string; home: string }> = {
+  lecturer: { endpoint: "/auth/lecturer/login", title: "Log in to CSE Attendance", sub: "Lecturer account", home: "/" },
+  admin: { endpoint: "/auth/admin/login", title: "Log in to the admin portal", sub: "Admin account", home: "/admin" },
+};
+
+export function AuthForm({ audience = "lecturer", next }: { audience?: Audience; next?: string }) {
+  const copy = COPY[audience];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[] | undefined>>({});
@@ -27,15 +33,17 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
     setError(null);
     setFieldErrors({});
     try {
-      await api(mode === "login" ? "/auth/lecturer/login" : "/auth/lecturer/signup", {
+      const res = await api<{ mustChangePassword?: boolean }>(copy.endpoint, {
         body: {
-          ...(mode === "signup" ? { name: form.get("name") } : {}),
           email: form.get("email"),
           password: form.get("password"),
           keepLoggedIn: form.get("keep") === "on",
         },
       });
-      window.location.href = safeNext(next);
+      const target = safeNext(next, copy.home);
+      window.location.href = res.mustChangePassword
+        ? `/change-password?${new URLSearchParams({ next: target })}`
+        : target;
     } catch (err) {
       if (err instanceof ClientApiError) {
         setError(Object.keys(err.fieldErrors).length ? null : err.message);
@@ -47,64 +55,44 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
     }
   }
 
-  const otherHref = (path: string) => (next ? `${path}?next=${encodeURIComponent(next)}` : path);
-
   return (
     // method="post": even a native submit never puts the password in the URL.
     <form aria-labelledby="auth-title" className={s.authForm} onSubmit={submit} method="post" noValidate>
       <div>
         <h2 id="auth-title" className={s.h1}>
-          {mode === "login" ? "Log in to CSE Attendance" : "Create a lecturer account"}
+          {copy.title}
         </h2>
-        <p className={s.sub}>Lecturer account</p>
+        <p className={s.sub}>{copy.sub}</p>
       </div>
-      <div className="lu-notice lu-notice--info" role="note" style={{ maxWidth: "none" }}>
-        <Info {...ico} />
-        <span>Students don&apos;t log in here. They use the Android app.</span>
-      </div>
+      {audience === "lecturer" && (
+        <div className="lu-notice lu-notice--info" role="note" style={{ maxWidth: "none" }}>
+          <Info {...ico} />
+          <span>Students don&apos;t log in here. They use the Android app.</span>
+        </div>
+      )}
       <FormError message={error} />
 
-      {mode === "signup" && (
-        <Field label="Your name" error={fieldErrors.name?.[0]}>
-          <input className="lu-input" name="name" autoComplete="name" placeholder="Dr. N. Ranasinghe" required />
-        </Field>
-      )}
       <Field label="Email" error={fieldErrors.email?.[0]}>
         <input className="lu-input" type="email" name="email" autoComplete="email" required />
       </Field>
-      <Field
-        label="Password"
-        error={fieldErrors.password?.[0]}
-        hint={mode === "signup" ? "At least 8 characters." : undefined}
-      >
-        <input
-          className="lu-input"
-          type="password"
-          name="password"
-          autoComplete={mode === "login" ? "current-password" : "new-password"}
-          required
-        />
+      <Field label="Password" error={fieldErrors.password?.[0]}>
+        <input className="lu-input" type="password" name="password" autoComplete="current-password" required />
       </Field>
       <label className="lu-check">
-        <input type="checkbox" name="keep" defaultChecked />
+        <input type="checkbox" name="keep" defaultChecked={audience === "lecturer"} />
         Keep me logged in
       </label>
       <button type="submit" className={`lu-btn lu-btn--primary ${s.full}`} disabled={busy || !ready}>
-        {mode === "login" ? (busy ? "Logging in…" : "Log in") : busy ? "Creating account…" : "Create account"}
+        {busy ? "Logging in…" : "Log in"}
       </button>
       <p className={s.muted} style={{ margin: 0, textAlign: "center" }}>
-        {mode === "login" ? (
-          <>
-            New lecturer?{" "}
-            <Link className={s.link} href={otherHref("/signup")}>
-              Create an account
-            </Link>
-          </>
+        {audience === "lecturer" ? (
+          "New lecturer? Ask the department admin to add your account."
         ) : (
           <>
-            Already have an account?{" "}
-            <Link className={s.link} href={otherHref("/login")}>
-              Log in
+            Lecturer?{" "}
+            <Link className={s.link} href="/login">
+              Log in to the lecturer portal
             </Link>
           </>
         )}

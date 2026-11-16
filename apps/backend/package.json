@@ -13,6 +13,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "admin:create": "tsx scripts/create-admin.ts",
     "sim:phone": "tsx scripts/sim-phone.ts",
     "postinstall": "prisma generate"
   },

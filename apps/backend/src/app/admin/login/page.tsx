@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { AuthShell } from "../AuthShell";
-import { AuthForm } from "../AuthForm";
+import { AuthShell } from "@/app/(auth)/AuthShell";
+import { AuthForm } from "@/app/(auth)/AuthForm";
 
-export const metadata: Metadata = { title: "Create account" };
+export const metadata: Metadata = { title: "Admin log in" };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
   return (
     <AuthShell>
-      <AuthForm mode="signup" next={next} />
+      <AuthForm audience="admin" next={next} />
     </AuthShell>
   );
 }

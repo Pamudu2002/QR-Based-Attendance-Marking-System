@@ -8,7 +8,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
   const { next } = await searchParams;
   return (
     <AuthShell>
-      <AuthForm mode="login" next={next} />
+      <AuthForm next={next} />
     </AuthShell>
   );
 }

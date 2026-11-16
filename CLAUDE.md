@@ -75,6 +75,7 @@ The UI follows the Lumora design system. Read `design/README.md` before building
 ### Backend (`apps/backend`)
 - Route handlers use the existing `handler` wrapper and `ApiError` from `src/lib/http.ts`. Validate every body with zod.
 - Every lecturer route checks that the lecturer owns the module or session.
+- Lecturer accounts are created only by an admin (`/admin`, PLAN §4.4); there is no public sign-up. Admin routes use `requireAdminId` / `requireAdmin`, never the lecturer helpers.
 - Token age is measured **only on the server clock**. Accept rule: valid HMAC and `tokenAgeMs ≤ (intervalSec + graceSec) × 1000`.
 - CSV import: dry run first, then save in one transaction.
 - Schema changes go through a new Prisma migration. Never edit applied migrations, and never run `prisma migrate reset` against a shared database.
@@ -88,6 +89,7 @@ pnpm install
 pnpm --filter @attendance/backend dev          # http://localhost:3000
 pnpm --filter @attendance/backend typecheck
 pnpm --filter @attendance/backend test         # needs local Postgres (DB attendance_test)
+pnpm --filter @attendance/backend admin:create # create an admin (or reset its password); admins add lecturers at /admin
 
 # Android (from apps/qr-android)
 ./gradlew assembleDebug
